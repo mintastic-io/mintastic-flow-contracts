@@ -1,0 +1,21 @@
+title Owner accepts NFT bid (on-chain)
+
+fontawesome5solid f542 OnFlow #cyan
+fontawesome5solid f007 Alice #00ffff
+fontawesome5solid f6d1 MintasticMarket #00ffff
+fontawesome5solid f6d1 MintasticCredit #00ffff
+fontawesome5solid f007 Bob #00ffff
+fontawesome5solid f007 Mintastic #00ffff
+
+MintasticCredit<#cyan-Bob:createBid(...)
+MintasticCredit--#cyan>Bob:bid
+
+MintasticMarket<#cyan-Bob:bid(...)
+Alice-#cyan>MintasticMarket:acceptBid(...)
+OnFlow<#cyan-MintasticMarket:emit MarketItemBidAccepted(...)
+
+Alice<#cyan-MintasticMarket:routePaymentShare(...)
+Alice<#cyan-MintasticMarket:routeRoyaltyShare(...)
+MintasticMarket-#cyan>Mintastic:routeServiceShare(...)
+OnFlow<#cyan-MintasticMarket:emit MarketItemAccepted(...)
+MintasticMarket--#cyan>Bob:NFT

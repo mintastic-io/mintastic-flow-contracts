@@ -1,0 +1,28 @@
+title Create and mint NFT
+
+fontawesome5solid f542 OnFlow #cyan
+fontawesome5solid f007 Mintastic #00ffff
+fontawesome5solid f007 Alice #00ffff
+fontawesome5solid f6d1 MintasticNFT #00ffff
+fontawesome5solid f007 Bob #00ffff
+
+
+Alice-#cyan>MintasticNFT:setupCollector()
+Alice<#cyan--MintasticNFT:resource
+
+Alice-#cyan>MintasticNFT:setupCreator()
+Alice<#cyan--MintasticNFT:resource
+
+Bob-#cyan>MintasticNFT:setupCollector()
+Bob<#cyan--MintasticNFT:resource
+
+Mintastic<#violet-Alice:createAsset(...)
+Mintastic-#cyan>MintasticNFT:createAsset(...)
+
+Mintastic<#violet-Alice:mint(...)
+Mintastic-#cyan>MintasticNFT:mint(...)
+
+activate MintasticNFT
+OnFlow<#cyan--MintasticNFT:emit Mint(...)
+Alice<#cyan--MintasticNFT:tokens
+deactivate MintasticNFT
