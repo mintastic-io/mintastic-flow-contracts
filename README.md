@@ -2,6 +2,10 @@
 All flow cadence contracts used by mintastic
 
 
+This repository contains all cadence flow contracts as well as script and transaction files.
+Furthermore, there are wrappers in the repository, which make the scripts and transactions executable using Typescript.
+
+Tests can be executed with "npm run test" (the flow-emulator needs to be started)
 
 # MintasticNFT
 This contract defines the structure and behaviour of mintastic NFT assets. By using the MintasticNFT contract, assets 
