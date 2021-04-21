@@ -1,5 +1,5 @@
 import NonFungibleToken from 0xNonFungibleToken
-import MintasticNFT from 0xMintsticNFT
+import MintasticNFT from 0xMintasticNFT
 import FungibleToken from 0xFungibleToken
 import MintasticCredit from 0xMintasticCredit
 
@@ -31,7 +31,7 @@ pub contract MintasticMarket {
     pub resource interface PublicMarketItem {
         pub let assetId: String
         pub var price: UFix64
-        pub let bids:  {UInt64:UInt16}
+        pub let bids:  {UInt64:Int}
         pub fun getSupply(): Int
     }
 
@@ -115,7 +115,7 @@ pub contract MintasticMarket {
     pub resource MarketItem: PublicMarketItem {
         pub let assetId: String
         pub var price:   UFix64
-        pub let bids:    {UInt64:UInt16}
+        pub let bids:    {UInt64:Int}
 
         access(self) let nftOffering: @{NFTOffering}
         access(self) let recipient:   Address
@@ -266,7 +266,7 @@ pub contract MintasticMarket {
             }
             let offer = &self.items[assetId] as &MarketItem
             let bidId = MintasticMarket.bidRegistry.registerBid(bid: <- bidding)
-            offer.bids[bidId] = UInt16(offer.bids.length)
+            offer.bids[bidId] = offer.bids.length
         }
 
         pub fun abortBid(assetId: String, bidId: UInt64) {

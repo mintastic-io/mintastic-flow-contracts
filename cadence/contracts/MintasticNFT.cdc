@@ -1,4 +1,4 @@
-import NonFungibleToken from 0x01
+import NonFungibleToken from 0xNonFungibleToken
 
 /**
  * This contract defines the structure and behaviour of mintastic NFT assets.
@@ -165,6 +165,9 @@ pub contract MintasticNFT: NonFungibleToken {
             let token <- (self.ownedNFTs.remove(key: withdrawID) ?? panic("missing NFT")) as! @MintasticNFT.NFT
             self.assertLocking(token: &token as &NFT)
             self.ownedAssets[token.data.assetId]?.remove(key: token.data.edition)
+            if (self.ownedAssets.length == 0) {
+                self.ownedAssets.remove(key: token.data.assetId)
+            }
 
             emit Withdraw(id: token.id, from: self.owner?.address)
             return <-token
