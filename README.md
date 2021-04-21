@@ -1,10 +1,11 @@
-![mintastic](https://github.com/mintastic-io/mintastic-flow-contracts/blob/main/docs/image/mintastic_logo.png?raw=true)
-
+![mintastic](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/mintastic_logo.png)
 All flow cadence contracts used by mintastic
 
 
+This repository contains all cadence flow contracts as well as script and transaction files.
+Furthermore, there are wrappers in the repository, which make the scripts and transactions executable using Typescript.
 
-
+Tests can be executed with "npm run test" (the flow-emulator needs to be started)
 
 # MintasticNFT
 This contract defines the structure and behaviour of mintastic NFT assets. By using the MintasticNFT contract, assets 
@@ -288,11 +289,11 @@ Violoet colored lines represent off-chain functions.
 
 The Sequence diagram were created with https://sequencediagram.org/
 
-![create-and-mint-nft](https://github.com/mintastic-io/mintastic-flow-contracts/blob/main/docs/image/create-and-mint-nft.png?raw=true)
-![sell-list-nft-off-chain](https://github.com/mintastic-io/mintastic-flow-contracts/blob/main/docs/image/sell-list-nft-off-chain.png?raw=true)
-![sell-lazy-nft-on-chain](https://github.com/mintastic-io/mintastic-flow-contracts/blob/main/docs/image/sell-lazy-nft-on-chain.png?raw=true)
-![owner-accepts-nft-bid-on-chain](https://github.com/mintastic-io/mintastic-flow-contracts/blob/main/docs/image/owner-accepts-nft-bid-on-chain.png?raw=true)
-![owner-rejects-nft-bid-off-chain](https://github.com/mintastic-io/mintastic-flow-contracts/blob/main/docs/image/owner-rejects-nft-bid-off-chain.png?raw=true)
+![create-and-mint-nft](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/create-and-mint-nft.png)
+![sell-list-nft-off-chain](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/sell-list-nft-off-chain.png)
+![sell-lazy-nft-on-chain](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/sell-lazy-nft-on-chain.png)
+![owner-accepts-nft-bid-on-chain](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/owner-accepts-nft-bid-on-chain.png)
+![owner-rejects-nft-bid-off-chain](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/owner-rejects-nft-bid-off-chain.png)
 
 
 ## useful links
