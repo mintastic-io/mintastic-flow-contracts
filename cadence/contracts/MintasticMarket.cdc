@@ -29,9 +29,9 @@ pub contract MintasticMarket {
      * Resource interface which can be used to read public information about a market item.
      */
     pub resource interface PublicMarketItem {
-        pub let assetId: String
-        pub var price: UFix64
-        pub let bids:  {UInt64:Int}
+        pub let assetId:     String
+        pub var price:       UFix64
+        pub let bids:        {UInt64:Int}
         pub fun getSupply(): Int
     }
 
@@ -41,6 +41,8 @@ pub contract MintasticMarket {
     pub resource interface NFTOffering {
         pub fun provide(amount: UInt16): @NonFungibleToken.Collection
         pub fun getSupply(): Int
+        pub fun lock(amount: UInt16)
+        pub fun unlock(amount: UInt16)
     }
 
     /**
@@ -48,12 +50,14 @@ pub contract MintasticMarket {
      * These NFTs were directly handled out of the owners NFT collection.
      */
     pub resource ListOffering: NFTOffering {
-        pub let tokenIds: [UInt64]
-        pub let assetId: String
+        pub let tokenIds:          [UInt64]
+        pub let assetId:           String
+        pub var locked:            UInt64
         access(self) let provider: Capability<&{NonFungibleToken.Provider}>
 
         pub fun provide(amount: UInt16): @NonFungibleToken.Collection {
             pre { self.getSupply() >= Int(amount): "supply/demand mismatch" }
+            assert((self.getSupply() - Int(self.locked)) >= Int(amount), message: "supply/demand mismatch due to locked elements")
             assert(!MintasticNFT.lockedAssets.contains(self.assetId), message: "asset is locked")
             let collection <- MintasticNFT.createEmptyCollection()
             var a:UInt16 = 0
@@ -72,6 +76,16 @@ pub contract MintasticMarket {
             return self.tokenIds.length
         }
 
+        pub fun lock(amount: UInt16) {
+            pre { self.tokenIds.length >= Int(amount): "not enough elements to lock" }
+            self.locked = self.locked + UInt64(amount)
+        }
+
+        pub fun unlock(amount: UInt16) {
+            pre { self.locked >= UInt64(amount): "not enough elements to unlock" }
+            self.locked = self.locked - UInt64(amount)
+        }
+
         init(tokenIds: [UInt64], assetId: String, provider: Capability<&{NonFungibleToken.Provider}>) {
             pre {
                 provider.borrow() != nil: "Cannot borrow seller"
@@ -80,6 +94,7 @@ pub contract MintasticMarket {
             self.tokenIds = tokenIds
             self.assetId  = assetId
             self.provider = provider
+            self.locked   = 0
         }
     }
 
@@ -88,10 +103,13 @@ pub contract MintasticMarket {
      * are going to be minted only after a successful sale.
      */
     pub resource LazyOffering: NFTOffering {
-        pub let assetId: String
+        pub let assetId:         String
+        pub var locked:          UInt64
         access(self) let minter: &MintasticNFT.NFTMinter
 
         pub fun provide(amount: UInt16): @NonFungibleToken.Collection {
+            pre { self.getSupply() >= Int(amount): "supply/demand mismatch" }
+            assert((self.getSupply() - Int(self.locked)) >= Int(amount), message: "supply/demand mismatch due to locked elements")
             assert(!MintasticNFT.lockedAssets.contains(self.assetId), message: "asset is locked")
             return <- self.minter.mint(assetId: self.assetId, amount: amount)
         }
@@ -100,9 +118,64 @@ pub contract MintasticMarket {
             return Int(MintasticNFT.maxSupplies[self.assetId]! - MintasticNFT.curSupplies[self.assetId]!)
         }
 
+        pub fun lock(amount: UInt16) {
+            pre { self.getSupply() >= Int(amount): "not enough elements to lock" }
+            self.locked = self.locked + UInt64(amount)
+        }
+
+        pub fun unlock(amount: UInt16) {
+            pre { self.locked >= UInt64(amount): "not enough elements to unlock" }
+            self.locked = self.locked - UInt64(amount)
+        }
+
         init(assetId: String, minter: &MintasticNFT.NFTMinter) {
             self.assetId = assetId
             self.minter  = minter
+            self.locked  = 0
+        }
+    }
+
+    /**
+     * A TimeOffering is a nft offering based on a NFT minter resource and a given block view which means that
+     * these NFTs are going to be minted only if the current block view is lower than
+     * or equal the given block view.
+     */
+    pub resource TimeOffering: NFTOffering {
+        pub let assetId:         String
+        pub let blockView:       UInt64
+        pub var locked:          UInt64
+        access(self) let minter: &MintasticNFT.NFTMinter
+
+        pub fun provide(amount: UInt16): @NonFungibleToken.Collection {
+            pre { self.getSupply() >= Int(amount): "supply/demand mismatch" }
+            assert((self.getSupply() - Int(self.locked)) >= Int(amount), message: "supply/demand mismatch due to locked elements")
+            assert(!MintasticNFT.lockedAssets.contains(self.assetId), message: "asset is locked")
+            assert(getCurrentBlock().view < self.blockView, message: "time offering elapsed")
+            return <- self.minter.mint(assetId: self.assetId, amount: amount)
+        }
+
+        pub fun getSupply(): Int {
+            if (getCurrentBlock().view >= self.blockView) {
+                return 0
+            }
+            return Int(MintasticNFT.maxSupplies[self.assetId]! - MintasticNFT.curSupplies[self.assetId]!)
+        }
+
+        pub fun lock(amount: UInt16) {
+            pre { self.getSupply() >= Int(amount): "not enough elements to lock" }
+            self.locked = self.locked + UInt64(amount)
+        }
+
+        pub fun unlock(amount: UInt16) {
+            pre { self.locked >= UInt64(amount): "not enough elements to unlock" }
+            self.locked = self.locked - UInt64(amount)
+        }
+
+        init(assetId: String, blockView: UInt64, minter: &MintasticNFT.NFTMinter) {
+            self.assetId   = assetId
+            self.blockView = blockView
+            self.minter    = minter
+            self.locked    = 0
         }
     }
 
@@ -142,8 +215,14 @@ pub contract MintasticMarket {
         }
 
         access(self) fun routeRoyaltyShare(payment: @{MintasticCredit.Payment}) {
-            let address = MintasticNFT.assets[self.assetId]!.address
-            self.routePayment(payment: <- payment, recipient: address)
+            let addresses = MintasticNFT.assets[self.assetId]!.addresses
+            let balance = payment.vault.balance
+            for address in addresses.keys {
+                let addressPayment <- payment.split(amount: balance * addresses[address]!)
+                self.routePayment(payment: <- addressPayment, recipient: address)
+            }
+            assert(payment.vault.balance == 0.0, message: "invalid royalty payments")
+            destroy payment
         }
 
         access(self) fun getServiceShare(amount: UFix64): UFix64 {
@@ -334,6 +413,10 @@ pub contract MintasticMarket {
 
     pub fun createLazyOffer(assetId: String, minter: &MintasticNFT.NFTMinter): @LazyOffering {
         return <- create LazyOffering(assetId: assetId, minter: minter)
+    }
+
+    pub fun createTimeOffer(assetId: String, blockView: UInt64, minter: &MintasticNFT.NFTMinter): @TimeOffering {
+        return <- create TimeOffering(assetId: assetId, blockView: blockView, minter: minter)
     }
 
     /*

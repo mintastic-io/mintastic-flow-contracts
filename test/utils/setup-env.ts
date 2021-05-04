@@ -4,7 +4,7 @@ import {AddressMap, NodeCadenceEngine, setupCollector} from "../../src";
 import deployContract from "./deploy-contract";
 import {setupCreator} from "../../src/transactions/account/setup-creator";
 import {setBlockLimit} from "../../src/transactions/market/set-block-limit";
-import {setExchangeRate} from "../../src/transactions/script/set-exchange-rate";
+import {setExchangeRate} from "../../src/transactions/credit/set-exchange-rate";
 import {setMarketFee} from "../../src/transactions/market/set-market-fee";
 import {latestBlock as getLatestBlock} from "@onflow/sdk-latest-block";
 

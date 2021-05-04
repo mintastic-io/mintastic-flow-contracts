@@ -22,7 +22,7 @@ import {mintFlow} from "../src/transactions/flow/mint-flow";
 import {getBalance} from "../src/scripts/flow/get-balance";
 import {buyWithFlow} from "../src/transactions/market/buy-with-flow";
 import getAccountAddress from "./utils/get-account-address";
-import {setExchangeRate} from "../src/transactions/script/set-exchange-rate";
+import {setExchangeRate} from "../src/transactions/credit/set-exchange-rate";
 import {bidWithFlow} from "../src/transactions/market/bid-with-flow";
 import {setupCreator} from "../src/transactions/account/setup-creator";
 import {getEvents} from "./utils/get-events";
@@ -39,52 +39,52 @@ describe("test mintastic market contract", function () {
         const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
 
         // create a list offering
-        await engine.execute(mint(alice, asset.assetId, 10));
-        await engine.execute(createListOffer(alice, asset.assetId, "1000.0"))
+        await engine.execute(mint(alice, asset.assetId!, 10));
+        await engine.execute(createListOffer(alice, asset.assetId!, "1000.0"))
 
         // buy should fail when balance is too low
-        await expectError(engine.execute(buy(alice, bob, asset.assetId, "100.0", 10)), invalidBalance);
+        await expectError(engine.execute(buy(alice, bob, asset.assetId!, "100.0", 10)), invalidBalance);
         // buy should fail when demand exceeds supply
-        await expectError(engine.execute(buy(alice, bob, asset.assetId, "1000.0", 12)), invalidDemand);
+        await expectError(engine.execute(buy(alice, bob, asset.assetId!, "1000.0", 12)), invalidDemand);
 
-        await engine.execute(buy(alice, bob, asset.assetId, "1000.0", 2));
-        await engine.execute(buy(alice, bob, asset.assetId, "1000.0", 6));
-        await engine.execute(buy(alice, bob, asset.assetId, "1000.0", 2));
+        await engine.execute(buy(alice, bob, asset.assetId!, "1000.0", 2));
+        await engine.execute(buy(alice, bob, asset.assetId!, "1000.0", 6));
+        await engine.execute(buy(alice, bob, asset.assetId!, "1000.0", 2));
 
         // buy should fail when market item is sold out
-        await expectError(engine.execute(buy(alice, bob, asset.assetId, "1000.0", 2)), noItem);
+        await expectError(engine.execute(buy(alice, bob, asset.assetId!, "1000.0", 2)), noItem);
     });
     test("buy NFT (off-chain, lazy offer)", async () => {
         const {engine, mintastic, alice, bob} = await getEnv()
         const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
 
         // create a lazy offering
-        await engine.execute(createLazyOffer(alice, asset.assetId, "1000.0"))
+        await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
 
         // buy should fail when balance is too low
-        await expectError(engine.execute(buy(mintastic, bob, asset.assetId, "100.0", 10)), invalidBalance);
+        await expectError(engine.execute(buy(mintastic, bob, asset.assetId!, "100.0", 10)), invalidBalance);
         // buy should fail when demand exceeds supply
-        await expectError(engine.execute(buy(mintastic, bob, asset.assetId, "1000.0", 12)), invalidDemand);
+        await expectError(engine.execute(buy(mintastic, bob, asset.assetId!, "1000.0", 12)), invalidDemand);
 
-        await engine.execute(buy(mintastic, bob, asset.assetId, "1000.0", 2));
-        await engine.execute(buy(mintastic, bob, asset.assetId, "1000.0", 6));
-        await engine.execute(buy(mintastic, bob, asset.assetId, "1000.0", 2));
+        await engine.execute(buy(mintastic, bob, asset.assetId!, "1000.0", 2));
+        await engine.execute(buy(mintastic, bob, asset.assetId!, "1000.0", 6));
+        await engine.execute(buy(mintastic, bob, asset.assetId!, "1000.0", 2));
 
         // buy should fail when market item is sold out
-        await expectError(engine.execute(buy(mintastic, bob, asset.assetId, "1000.0", 2)), noItem);
+        await expectError(engine.execute(buy(mintastic, bob, asset.assetId!, "1000.0", 2)), noItem);
     });
     test("accept bid NFT (off-chain, list offer)", async () => {
         const {engine, alice, bob} = await getEnv()
         const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
-        await engine.execute(mint(alice, asset.assetId, 1));
+        await engine.execute(mint(alice, asset.assetId!, 1));
 
         const ids = await engine.execute(readTokenIds(alice));
 
-        await engine.execute(createListOffer(alice, asset.assetId, "1000.0"))
-        await engine.execute(bid(alice, bob, asset.assetId, "500.0", 1));
+        await engine.execute(createListOffer(alice, asset.assetId!, "1000.0"))
+        await engine.execute(bid(alice, bob, asset.assetId!, "500.0", 1));
 
-        const bids = await engine.execute(readBids(alice, asset.assetId));
-        await engine.execute(acceptBid(alice, asset.assetId, bids[0]));
+        const bids = await engine.execute(readBids(alice, asset.assetId!));
+        await engine.execute(acceptBid(alice, asset.assetId!, bids[0]));
 
         expect(await engine.execute(readTokenIds(alice))).not.toContain(ids[ids.length - 1]);
         expect(await engine.execute(readTokenIds(bob))).toContain(ids[ids.length - 1]);
@@ -93,13 +93,13 @@ describe("test mintastic market contract", function () {
         const {engine, mintastic, alice, bob} = await getEnv()
         const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
 
-        await engine.execute(createLazyOffer(alice, asset.assetId, "1000.0"))
-        await engine.execute(bid(mintastic, bob, asset.assetId, "500.0", 1));
+        await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
+        await engine.execute(bid(mintastic, bob, asset.assetId!, "500.0", 1));
 
         expect(await engine.execute(readAssetIds(bob))).not.toContain(asset.assetId);
 
-        const bids = await engine.execute(readBids(mintastic, asset.assetId));
-        await engine.execute(acceptBid(mintastic, asset.assetId, bids[0]));
+        const bids = await engine.execute(readBids(mintastic, asset.assetId!));
+        await engine.execute(acceptBid(mintastic, asset.assetId!, bids[0]));
 
         expect(await engine.execute(readAssetIds(bob))).toContain(asset.assetId);
     });
@@ -107,28 +107,28 @@ describe("test mintastic market contract", function () {
         const {engine, mintastic, alice, bob} = await getEnv()
         const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
 
-        await engine.execute(createLazyOffer(alice, asset.assetId, "1000.0"))
-        await engine.execute(bid(mintastic, bob, asset.assetId, "500.0", 1));
-        await engine.execute(bid(mintastic, bob, asset.assetId, "450.0", 1));
+        await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
+        await engine.execute(bid(mintastic, bob, asset.assetId!, "500.0", 1));
+        await engine.execute(bid(mintastic, bob, asset.assetId!, "450.0", 1));
 
         expect(await engine.execute(readAssetIds(bob))).not.toContain(asset.assetId);
 
-        const bids = await engine.execute(readBids(mintastic, asset.assetId));
-        await engine.execute(rejectBid(mintastic, asset.assetId, bids[0]));
-        expect(await engine.execute(readBids(mintastic, asset.assetId))).not.toContain(bids[0]);
+        const bids = await engine.execute(readBids(mintastic, asset.assetId!));
+        await engine.execute(rejectBid(mintastic, asset.assetId!, bids[0]));
+        expect(await engine.execute(readBids(mintastic, asset.assetId!))).not.toContain(bids[0]);
     });
     test("abort  bid NFT (off-chain, lazy offer)", async () => {
         const {engine, mintastic, alice, bob} = await getEnv()
         const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
 
-        await engine.execute(createLazyOffer(alice, asset.assetId, "1000.0"))
-        await engine.execute(bid(mintastic, bob, asset.assetId, "500.0", 1));
-        await engine.execute(bid(mintastic, bob, asset.assetId, "450.0", 1));
+        await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
+        await engine.execute(bid(mintastic, bob, asset.assetId!, "500.0", 1));
+        await engine.execute(bid(mintastic, bob, asset.assetId!, "450.0", 1));
 
         expect(await engine.execute(readAssetIds(bob))).not.toContain(asset.assetId);
 
-        const bids = await engine.execute(readBids(mintastic, asset.assetId));
-        expectError(engine.execute(abortBid(mintastic, asset.assetId, bids[0])), bidNotExpired);
+        const bids = await engine.execute(readBids(mintastic, asset.assetId!));
+        expectError(engine.execute(abortBid(mintastic, asset.assetId!, bids[0])), bidNotExpired);
     });
     test("buy NFT (on-chain, list offer)", async () => {
         const {engine, alice} = await getEnv()
@@ -143,23 +143,23 @@ describe("test mintastic market contract", function () {
         const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
 
         // create a list offering
-        await engine.execute(mint(alice, asset.assetId, 10));
-        await engine.execute(createListOffer(alice, asset.assetId, "1000.0"))
+        await engine.execute(mint(alice, asset.assetId!, 10));
+        await engine.execute(createListOffer(alice, asset.assetId!, "1000.0"))
 
         // buy should fail when balance is too low
-        await expectError(engine.execute(buyWithFlow(alice, buyer, asset.assetId, "100.0", 10)), invalidBalance);
+        await expectError(engine.execute(buyWithFlow(alice, buyer, asset.assetId!, "100.0", 10)), invalidBalance);
         // buy should fail when demand exceeds supply
-        await expectError(engine.execute(buyWithFlow(alice, buyer, asset.assetId, "1000.0", 12)), invalidDemand);
+        await expectError(engine.execute(buyWithFlow(alice, buyer, asset.assetId!, "1000.0", 12)), invalidDemand);
 
         expect(await engine.execute(getBalance(buyer))).toBe(1000.1)
-        await engine.execute(buyWithFlow(alice, buyer, asset.assetId, "1000.0", 2));
+        await engine.execute(buyWithFlow(alice, buyer, asset.assetId!, "1000.0", 2));
         expect(await engine.execute(getBalance(buyer))).toBe(920.1)
-        await engine.execute(buyWithFlow(alice, buyer, asset.assetId, "1000.0", 6));
-        await engine.execute(buyWithFlow(alice, buyer, asset.assetId, "1000.0", 2));
+        await engine.execute(buyWithFlow(alice, buyer, asset.assetId!, "1000.0", 6));
+        await engine.execute(buyWithFlow(alice, buyer, asset.assetId!, "1000.0", 2));
         expect(await engine.execute(getBalance(buyer))).toBe(600.1)
 
         // buy should fail when market item is sold out
-        await expectError(engine.execute(buyWithFlow(alice, buyer, asset.assetId, "1000.0", 2)), noItem);
+        await expectError(engine.execute(buyWithFlow(alice, buyer, asset.assetId!, "1000.0", 2)), noItem);
     });
     test("buy NFT (on-chain, lazy offer)", async () => {
         const {engine, alice, mintastic} = await getEnv()
@@ -172,22 +172,22 @@ describe("test mintastic market contract", function () {
         await engine.execute(setExchangeRate("flow", "25.0"))
 
         const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
-        await engine.execute(createLazyOffer(alice, asset.assetId, "1000.0"))
+        await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
 
         // buy should fail when balance is too low
-        await expectError(engine.execute(buyWithFlow(mintastic, buyer, asset.assetId, "100.0", 10)), invalidBalance);
+        await expectError(engine.execute(buyWithFlow(mintastic, buyer, asset.assetId!, "100.0", 10)), invalidBalance);
         // buy should fail when demand exceeds supply
-        await expectError(engine.execute(buyWithFlow(mintastic, buyer, asset.assetId, "1000.0", 12)), invalidDemand);
+        await expectError(engine.execute(buyWithFlow(mintastic, buyer, asset.assetId!, "1000.0", 12)), invalidDemand);
 
         expect(await engine.execute(getBalance(buyer))).toBe(1000.1)
-        await engine.execute(buyWithFlow(mintastic, buyer, asset.assetId, "1000.0", 2));
+        await engine.execute(buyWithFlow(mintastic, buyer, asset.assetId!, "1000.0", 2));
         expect(await engine.execute(getBalance(buyer))).toBe(920.1)
-        await engine.execute(buyWithFlow(mintastic, buyer, asset.assetId, "1000.0", 6));
-        await engine.execute(buyWithFlow(mintastic, buyer, asset.assetId, "1000.0", 2));
+        await engine.execute(buyWithFlow(mintastic, buyer, asset.assetId!, "1000.0", 6));
+        await engine.execute(buyWithFlow(mintastic, buyer, asset.assetId!, "1000.0", 2));
         expect(await engine.execute(getBalance(buyer))).toBe(600.1)
 
         // buy should fail when market item is sold out
-        await expectError(engine.execute(buyWithFlow(mintastic, buyer, asset.assetId, "1000.0", 2)), noItem);
+        await expectError(engine.execute(buyWithFlow(mintastic, buyer, asset.assetId!, "1000.0", 2)), noItem);
     });
     test("accept bid NFT (on-chain, list offer)", async () => {
         const {engine, alice} = await getEnv()
@@ -200,15 +200,15 @@ describe("test mintastic market contract", function () {
         await engine.execute(setExchangeRate("flow", "25.0"))
 
         const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
-        await engine.execute(mint(alice, asset.assetId, 1));
+        await engine.execute(mint(alice, asset.assetId!, 1));
 
         const ids = await engine.execute(readTokenIds(alice));
 
-        await engine.execute(createListOffer(alice, asset.assetId, "1000.0"))
-        await engine.execute(bidWithFlow(alice, buyer, asset.assetId, "500.0", 1));
+        await engine.execute(createListOffer(alice, asset.assetId!, "1000.0"))
+        await engine.execute(bidWithFlow(alice, buyer, asset.assetId!, "500.0", 1));
 
-        const bids = await engine.execute(readBids(alice, asset.assetId));
-        await engine.execute(acceptBid(alice, asset.assetId, bids[0]));
+        const bids = await engine.execute(readBids(alice, asset.assetId!));
+        await engine.execute(acceptBid(alice, asset.assetId!, bids[0]));
 
         expect(await engine.execute(readTokenIds(alice))).not.toContain(ids[ids.length - 1]);
         expect(await engine.execute(readTokenIds(buyer))).toContain(ids[ids.length - 1]);
@@ -218,19 +218,19 @@ describe("test mintastic market contract", function () {
 
         // create an asset and insert it to market
         const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
-        await engine.execute(mint(alice, asset.assetId, 1));
-        await engine.execute(createListOffer(alice, asset.assetId, "1000.0"))
+        await engine.execute(mint(alice, asset.assetId!, 1));
+        await engine.execute(createListOffer(alice, asset.assetId!, "1000.0"))
 
         // sell the asset and insert it to market
-        await engine.execute(buy(alice, bob, asset.assetId, "1000.0", 1));
+        await engine.execute(buy(alice, bob, asset.assetId!, "1000.0", 1));
         await engine.execute(setupCreator(bob))
-        await engine.execute(createListOffer(bob, asset.assetId, "10000.0"))
+        await engine.execute(createListOffer(bob, asset.assetId!, "10000.0"))
 
         // sell the asset with flow
         const buyer = await getAccountAddress("buyer-" + uuid())
         await engine.execute(setupCollector(buyer))
         await engine.execute(mintFlow(buyer, "1000.0"))
-        await engine.execute(buyWithFlow(bob, buyer, asset.assetId, "10000.0", 1));
+        await engine.execute(buyWithFlow(bob, buyer, asset.assetId!, "10000.0", 1));
 
         const events = await getEvents("FlowPaymentProvider", "FlowPaid", blockHeight);
         expect(events.length >= 3).toBeTruthy();
@@ -247,11 +247,11 @@ describe("test mintastic market admin functions", function () {
         const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
 
         // create a list offering
-        await engine.execute(mint(alice, asset.assetId, 10));
-        await engine.execute(createListOffer(alice, asset.assetId, "1000.0"))
+        await engine.execute(mint(alice, asset.assetId!, 10));
+        await engine.execute(createListOffer(alice, asset.assetId!, "1000.0"))
 
-        expect(await engine.execute(readItemPrice(alice, asset.assetId))).toBe(1000);
-        await engine.execute(setItemPrice(alice, asset.assetId))
-        expect(await engine.execute(readItemPrice(alice, asset.assetId))).toBe(500);
+        expect(await engine.execute(readItemPrice(alice, asset.assetId!))).toBe(1000);
+        await engine.execute(setItemPrice(alice, asset.assetId!, "500.0"))
+        expect(await engine.execute(readItemPrice(alice, asset.assetId!))).toBe(500);
     });
 })

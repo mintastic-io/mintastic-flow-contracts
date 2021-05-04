@@ -8,7 +8,7 @@ import MintasticCredit from 0xMintasticCredit
  * This transaction is used to change the price of a market item.
  * The transaction is invoked by the market item owner.
  */
-transaction(owner: Address, assetId: String) {
+transaction(owner: Address, assetId: String, price: UFix64) {
     let marketStore: &MintasticMarket.MarketStore
 
     prepare(owner: AuthAccount) {
@@ -18,6 +18,6 @@ transaction(owner: Address, assetId: String) {
 
     execute {
         let marketItem = &self.marketStore.items[assetId] as! &MintasticMarket.MarketItem
-        marketItem.setPrice(price: 500.0)
+        marketItem.setPrice(price: price)
     }
 }

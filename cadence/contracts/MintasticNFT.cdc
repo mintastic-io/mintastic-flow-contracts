@@ -79,7 +79,7 @@ pub contract MintasticNFT: NonFungibleToken {
             MintasticNFT.assets[asset.assetId] == nil: "asset id already registered"
             MintasticNFT.maxSupplies[asset.assetId] == nil: "asset id already registered"
             MintasticNFT.curSupplies[asset.assetId] == nil: "asset id already registered"
-            !(MintasticNFT.lockedSeries[asset.creatorId]??[]).contains(UInt16(asset.series)): "series is locked"
+            !(MintasticNFT.lockedSeries[asset.creatorId]??[]).contains(asset.series): "series is locked"
           }
           MintasticNFT.assets[asset.assetId] = asset
           MintasticNFT.maxSupplies[asset.assetId] = maxSupply
@@ -126,23 +126,31 @@ pub contract MintasticNFT: NonFungibleToken {
     pub struct Asset {
         pub let assetId: String
         pub let creatorId: String
+        pub let addresses: {Address:UFix64}
         pub let content: String
-        pub let address: Address
         pub let royalty: UFix64
-        pub let series: UInt32
+        pub let series: UInt16
         pub let type: UInt16
 
-        init(creatorId: String, assetId: String, content: String, address: Address, royalty: UFix64, series: UInt32, type: UInt16) {
+        init(creatorId: String, assetId: String, content: String, addresses: {Address:UFix64}, royalty: UFix64, series: UInt16, type: UInt16) {
             pre {
                 royalty >= 0.0: "royalty must be greater than or equal to zero"
                 royalty <= 0.2: "royalty must be lower than or equal to 0.2"
                 Int(series) >= 0: "series must be greater than or equal to zero"
                 Int(type) >= 0: "type must be greater than or equal to zero"
+                addresses.length > 0: "no address found"
             }
-            self.creatorId = creatorId
+
+            var sum:UFix64 = 0.0
+            for value in addresses.values {
+                sum = sum + value
+            }
+            assert(sum == 1.0, message: "invalid address shares")
+
             self.assetId = assetId
+            self.creatorId = creatorId
+            self.addresses = addresses
             self.content = content
-            self.address = address
             self.royalty = royalty
             self.series = series
             self.type = type

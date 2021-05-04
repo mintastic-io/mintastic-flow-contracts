@@ -34,7 +34,7 @@ describe("mintastic contract test suite", function () {
         const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
         expect((await engine.execute(readAllAssetIds())).length > 0).toBeTruthy();
 
-        await engine.execute(mint(bob, asset.assetId, 1));
+        await engine.execute(mint(bob, asset.assetId!, 1));
 
         expect((await engine.execute(readCollectorAssetIds(bob))).length > 0).toBeTruthy();
     });
@@ -56,21 +56,21 @@ describe("mintastic contract test suite", function () {
     test("cannot create asset twice", async () => {
         const {engine, alice} = await getEnv()
         const asset = await engine.execute(createAsset(newAsset(CREATOR_ID, uuid(), alice), 10));
-        await expect(engine.execute(createAsset(newAsset(CREATOR_ID, asset.assetId, alice), 10))).rejects.toContain("asset id already registered");
+        await expect(engine.execute(createAsset(newAsset(CREATOR_ID, asset.assetId!, alice), 10))).rejects.toContain("asset id already registered");
     });
 
     test("cannot increase max supply", async () => {
         const {engine, alice} = await getEnv()
         const asset = await engine.execute(createAsset(newAsset(CREATOR_ID, uuid(), alice), 10));
-        await engine.execute(setMaxSupply(asset.assetId, 5));
-        await expect(engine.execute(setMaxSupply(asset.assetId, 7))).rejects.toContain("supply must be lower than current max supply");
+        await engine.execute(setMaxSupply(asset.assetId!, 5));
+        await expect(engine.execute(setMaxSupply(asset.assetId!, 7))).rejects.toContain("supply must be lower than current max supply");
     });
 
     test("cannot set max supply lower than cur supply", async () => {
         const {engine, alice, bob} = await getEnv()
         const asset = await engine.execute(createAsset(newAsset(CREATOR_ID, uuid(), alice), 10));
-        await engine.execute(mint(bob, asset.assetId, 5));
-        await expect(engine.execute(setMaxSupply(asset.assetId, 3))).rejects.toContain("supply must be greater than current supply");
+        await engine.execute(mint(bob, asset.assetId!, 5));
+        await expect(engine.execute(setMaxSupply(asset.assetId!, 3))).rejects.toContain("supply must be greater than current supply");
     });
 
     test("cannot mint unknown asset", async () => {
@@ -81,7 +81,7 @@ describe("mintastic contract test suite", function () {
     test("cannot mint more then max supply", async () => {
         const {engine, alice, bob} = await getEnv()
         const asset = await engine.execute(createAsset(newAsset(CREATOR_ID, uuid(), alice), 10));
-        await engine.execute(mint(bob, asset.assetId, 7));
-        await expect(engine.execute(mint(bob, asset.assetId, 7))).rejects.toContain("max supply limit reached");
+        await engine.execute(mint(bob, asset.assetId!, 7));
+        await expect(engine.execute(mint(bob, asset.assetId!, 7))).rejects.toContain("max supply limit reached");
     });
 })

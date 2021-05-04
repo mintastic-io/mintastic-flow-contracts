@@ -8,13 +8,15 @@ import {CadenceEngine} from "../../cadence-engine";
  *
  * @param owner the owner of the market item
  * @param assetId the asset id of the market item
- * @param bidId the id of the bid to accept
+ * @param price the price of the market item to set
  */
-export function setItemPrice(owner: string, assetId: string): (CadenceEngine) => Promise<void> {
+export function setItemPrice(owner: string, assetId: string, price: string): (CadenceEngine) => Promise<void> {
     if (owner.length == 0)
         throw Error("invalid owner address found");
     if (assetId.length == 0)
         throw Error("invalid asset id found");
+    if (!/^-?\d+(\.\d+)$/.test(price))
+        throw Error("invalid price found");
 
     return (engine: CadenceEngine) => {
         const auth = engine.getAuth(owner);
@@ -28,7 +30,8 @@ export function setItemPrice(owner: string, assetId: string): (CadenceEngine) =>
             fcl.limit(1000),
             fcl.args([
                 fcl.arg(owner, t.Address),
-                fcl.arg(assetId, t.String)
+                fcl.arg(assetId, t.String),
+                fcl.arg(price, t.UFix64)
             ])
         ])
             .then(fcl.decode)

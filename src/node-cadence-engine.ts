@@ -14,7 +14,7 @@ export class NodeCadenceEngine implements CadenceEngine{
     private readonly signer: string;
     private readonly keyId: number;
 
-    constructor(signer: string, keyId:number = 0, addressMap: AddressMap = new AddressMap({})) {
+    constructor(signer: string, keyId:number = 0, addressMap: AddressMap) {
         this.addressMap = addressMap;
         this.signer = signer;
         this.keyId = keyId;

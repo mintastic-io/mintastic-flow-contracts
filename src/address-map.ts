@@ -3,9 +3,9 @@ import * as fcl from "@onflow/fcl"
 
 export class AddressMap {
 
-    readonly mapping: {};
+    readonly mapping: AddressMapping;
 
-    constructor(mapping: {}) {
+    constructor(mapping: AddressMapping) {
         this.mapping = mapping;
     }
 
@@ -43,4 +43,12 @@ export class AddressMap {
         return codeMap;
     }
 
+}
+
+interface AddressMapping {
+    "0xMintasticNFT": string
+    "0xNonFungibleToken": string
+    "0xFungibleToken": string
+    "0xMintasticCredit": string
+    "0xMintasticMarket":string
 }
