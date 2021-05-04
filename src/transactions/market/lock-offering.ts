@@ -3,24 +3,24 @@ import * as t from "@onflow/types"
 import {CadenceEngine} from "../../cadence-engine";
 
 /**
- * This transaction is used to abort a bid on a market item.
- * The transaction is invoked by mintastic.
+ * This transaction is used to lock an nft offering of aa market item.
+ * The transaction is invoked by the market item owner.
  *
  * @param owner the owner of the market item
  * @param assetId the asset id of the market item
- * @param bidId the id of the bid to accept
+ * @param amount the amount of items to lock
  */
-export function abortBid(owner: string, assetId: string, bidId: number): (CadenceEngine) => Promise<void> {
+export function lockOffering(owner: string, assetId: string, amount: number): (CadenceEngine) => Promise<void> {
     if (owner.length == 0)
         throw Error("invalid owner address found");
     if (assetId.length == 0)
         throw Error("invalid asset id found");
-    if (bidId < 0)
-        throw Error("bidId must be greater than or equal zero");
+    if (amount < 0)
+        throw Error("amount must be greater than or equal zero");
 
     return (engine: CadenceEngine) => {
-        const auth = engine.getAuth(owner);
-        const code = engine.getCode("transactions/market/abort-bid");
+        const auth = engine.getAuth();
+        const code = engine.getCode("transactions/market/lock-offering");
 
         return fcl.send([
             fcl.transaction`${code}`,
@@ -31,7 +31,7 @@ export function abortBid(owner: string, assetId: string, bidId: number): (Cadenc
             fcl.args([
                 fcl.arg(owner, t.Address),
                 fcl.arg(assetId, t.String),
-                fcl.arg(bidId, t.UInt64)
+                fcl.arg(amount, t.UInt16)
             ])
         ])
             .then(fcl.decode)

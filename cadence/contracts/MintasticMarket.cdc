@@ -247,6 +247,14 @@ pub contract MintasticMarket {
             return self.nftOffering.getSupply()
         }
 
+        pub fun lock(amount: UInt16) {
+            self.nftOffering.lock(amount: amount)
+        }
+
+        pub fun unlock(amount: UInt16) {
+            self.nftOffering.unlock(amount: amount)
+        }
+
         pub fun setPrice(price: UFix64) {
             self.price = price
             let keys = self.bids.keys
@@ -272,13 +280,24 @@ pub contract MintasticMarket {
     }
 
     /**
-     * This resource interface defines all admin functions of a market store resource.
+     * This resource interface defines all admin functions of a market store
+     */
+    pub resource interface MarketStoreAdmin {
+        pub fun lock(token: &MarketToken, assetId: String)
+        pub fun unlock(token: &MarketToken, assetId: String)
+        pub fun lockOffering(token: &MarketToken, assetId: String, amount: UInt16)
+        pub fun unlockOffering(token: &MarketToken, assetId: String, amount: UInt16)
+    }
+
+    /**
+     * This resource interface defines all functions of a market store resource used by the market store owner.
      */
     pub resource interface MarketStoreManager {
         pub fun insert(item: @MarketItem)
         pub fun remove(assetId: String): @MarketItem
-        pub fun lock(assetId: String)
-        pub fun unlock(assetId: String)
+        pub fun acceptBid(assetId: String, bidId: UInt64)
+        pub fun abortBid(assetId: String, bidId: UInt64)
+        pub fun rejectBid(assetId: String, bidId: UInt64, force: Bool)
     }
 
     /**
@@ -301,7 +320,7 @@ pub contract MintasticMarket {
      * A bid can be rejected by the market store owner anytime. The bid owner
      * can also abort the bid but only after the expiration of the block limit of a bid.
      */
-    pub resource MarketStore : MarketStoreManager, PublicMarketStore {
+    pub resource MarketStore : MarketStoreManager, PublicMarketStore, MarketStoreAdmin {
         pub let items: @{String: MarketItem}
         pub let lockedItems: {String:String}
 
@@ -322,6 +341,7 @@ pub contract MintasticMarket {
             pre {
                 self.items[assetId] != nil: "market item not found"
                 self.lockedItems[assetId] == nil: "market item is locked"
+                !MintasticNFT.lockedAssets.contains(assetId): "asset is locked"
             }
             let offer = &self.items[assetId] as &MarketItem
 
@@ -342,6 +362,7 @@ pub contract MintasticMarket {
             pre {
                 self.items[assetId] != nil: "market item not found"
                 self.lockedItems[assetId] == nil: "market item is locked"
+                !MintasticNFT.lockedAssets.contains(assetId): "asset is locked"
             }
             let offer = &self.items[assetId] as &MarketItem
             let bidId = MintasticMarket.bidRegistry.registerBid(bid: <- bidding)
@@ -376,12 +397,24 @@ pub contract MintasticMarket {
             destroy bid
         }
 
-        pub fun lock(assetId: String) {
+        pub fun lock(token: &MarketToken, assetId: String) {
             self.lockedItems[assetId] = assetId
         }
 
-        pub fun unlock(assetId: String) {
+        pub fun unlock(token: &MarketToken, assetId: String) {
             self.lockedItems.remove(key: assetId)
+        }
+
+        pub fun lockOffering(token: &MarketToken, assetId: String, amount: UInt16) {
+            pre { self.items[assetId] != nil: "asset not found" }
+            let item = &self.items[assetId] as! &MarketItem
+            item.lock(amount: amount)
+        }
+
+        pub fun unlockOffering(token: &MarketToken, assetId: String, amount: UInt16) {
+            pre { self.items[assetId] != nil: "asset not found" }
+            let item = &self.items[assetId] as! &MarketItem
+            item.unlock(amount: amount)
         }
 
         pub fun getAssetIds(): [String] {
@@ -418,6 +451,12 @@ pub contract MintasticMarket {
     pub fun createTimeOffer(assetId: String, blockView: UInt64, minter: &MintasticNFT.NFTMinter): @TimeOffering {
         return <- create TimeOffering(assetId: assetId, blockView: blockView, minter: minter)
     }
+
+    /**
+     * This resource is used by the administrator as an argument of a public function
+     * in order to restrict access to that function.
+     */
+    pub resource MarketToken {}
 
     /*
      * This resource is the administrator object of the mintastic market.
@@ -457,7 +496,8 @@ pub contract MintasticMarket {
         self.paymentRouters <- {}
         self.bidRegistry    <- MintasticCredit.createBidRegistry(blockLimit: 0)
         self.account.save(<- create MarketAdmin(), to: /storage/MintasticMarketAdmin)
-        self.account.save(<- create MarketStore(),  to: /storage/MintasticMarketStore)
+        self.account.save(<- create MarketStore(), to: /storage/MintasticMarketStore)
+        self.account.save(<- create MarketToken(), to: /storage/MintasticMarketToken)
         self.account.link<&{MintasticMarket.PublicMarketStore}>(/public/MintasticMarketStore, target: /storage/MintasticMarketStore)
     }
 }

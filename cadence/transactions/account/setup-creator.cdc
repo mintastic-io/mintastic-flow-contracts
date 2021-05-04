@@ -13,7 +13,7 @@ transaction {
         if signer.borrow<&MintasticMarket.MarketStore>(from: Storage) == nil {
             let collection <- MintasticMarket.createMarketStore()
             signer.save(<-collection, to: Storage)
-            signer.link<&{MintasticMarket.PublicMarketStore}>(Public, target: Storage)
+            signer.link<&{MintasticMarket.PublicMarketStore, MintasticMarket.MarketStoreAdmin}>(Public, target: Storage)
         }
     }
 }
