@@ -4,16 +4,17 @@ import {CadenceEngine} from "../../cadence-engine";
 
 // noinspection DuplicatedCode
 /**
- * This transaction bids for a NFT by creating mintastic credits on the fly offering a fiat payment.
- * Due to the off-chain characteristics of this bid method, the mintastic contract owner issues this transaction.
+ * This transaction purchases a NFT by creating mintastic credits on the fly after a fiat payment.
+ * Due to the off-chain characteristics of this payment method, the mintastic contract owner issues this transaction.
  *
- * @param owner the owner of the market item
- * @param buyer the buyer of the market item
- * @param assetId the asset id of the market item
- * @param price the price of the market item
- * @param amount the number of times the item should be purchased
+ * @param owner
+ * @param buyer
+ * @param assetId
+ * @param price
+ * @param amount
+ * @param unlock indicates whether to unlock the offering before buying it
  */
-export function bid(owner: string, buyer: string, assetId: string, price: string, amount: number): (CadenceEngine) => Promise<void> {
+export function buyWithFiat(owner: string, buyer: string, assetId: string, price: string, amount: number, unlock: boolean = false): (CadenceEngine) => Promise<void> {
     if (!/^-?\d+(\.\d+)$/.test(price))
         throw Error("invalid price found");
     if (owner.length == 0)
@@ -27,7 +28,7 @@ export function bid(owner: string, buyer: string, assetId: string, price: string
 
     return (engine: CadenceEngine) => {
         const auth = engine.getAuth();
-        const code = engine.getCode("transactions/market/bid");
+        const code = engine.getCode(`transactions/market/${unlock ? "unlock-" : ""}buy-with-fiat`);
 
         // noinspection DuplicatedCode
         return fcl.send([

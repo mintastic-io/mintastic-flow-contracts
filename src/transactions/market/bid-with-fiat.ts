@@ -4,16 +4,16 @@ import {CadenceEngine} from "../../cadence-engine";
 
 // noinspection DuplicatedCode
 /**
- * This transaction purchases a NFT by creating mintastic credits on the fly after a fiat payment.
- * Due to the off-chain characteristics of this payment method, the mintastic contract owner issues this transaction.
+ * This transaction bids for a NFT by creating mintastic credits on the fly offering a fiat payment.
+ * Due to the off-chain characteristics of this bid method, the mintastic contract owner issues this transaction.
  *
- * @param owner
- * @param buyer
- * @param assetId
- * @param price
- * @param amount
+ * @param owner the owner of the market item
+ * @param buyer the buyer of the market item
+ * @param assetId the asset id of the market item
+ * @param price the price of the market item
+ * @param amount the number of times the item should be purchased
  */
-export function buy(owner: string, buyer: string, assetId: string, price: string, amount: number): (CadenceEngine) => Promise<void> {
+export function bidWithFiat(owner: string, buyer: string, assetId: string, price: string, amount: number): (CadenceEngine) => Promise<void> {
     if (!/^-?\d+(\.\d+)$/.test(price))
         throw Error("invalid price found");
     if (owner.length == 0)
@@ -27,7 +27,7 @@ export function buy(owner: string, buyer: string, assetId: string, price: string
 
     return (engine: CadenceEngine) => {
         const auth = engine.getAuth();
-        const code = engine.getCode("transactions/market/buy-with-fiat");
+        const code = engine.getCode("transactions/market/bid");
 
         // noinspection DuplicatedCode
         return fcl.send([

@@ -17,6 +17,8 @@ Alice<#cyan--MintasticMarket:marked item
 
 activate MintasticMarket
 
+Bob-#violet>Mintastic:init fiat money payment
+MintasticMarket<#cyan-Mintastic: lock offering
 Bob-#violet>Mintastic:transfer fiat money
 
 MintasticCredit<#cyan-Mintastic:createCredits(...)
@@ -25,7 +27,7 @@ MintasticCredit--#cyan>Mintastic:credits
 MintasticCredit<#cyan-Mintastic:exchange(...)
 MintasticCredit--#cyan>Mintastic:payment
 
-MintasticMarket<#cyan-Mintastic:buy(...)
+MintasticMarket<#cyan-Mintastic: unlock and buy(...)
 Alice<#violet-MintasticMarket:transfer fiat money
 OnFlow<#cyan-MintasticMarket:emit MarketItemAccepted(...)
 Alice--#cyan>Bob:NFT

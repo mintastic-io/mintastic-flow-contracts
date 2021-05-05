@@ -23,6 +23,6 @@ transaction(owner: Address, assetId: String, amount: UInt16) {
     }
 
     execute {
-        self.marketStore.lockOffering(token: self.marketToken, assetId: assetId, amount: amount)
+        self.marketStore.unlockOffering(token: self.marketToken, assetId: assetId, amount: amount)
     }
 }
