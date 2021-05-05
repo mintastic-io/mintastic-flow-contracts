@@ -191,7 +191,7 @@ pub contract MintasticMarket {
         pub let bids:    {UInt64:Int}
 
         access(self) let nftOffering: @{NFTOffering}
-        access(self) let recipient:   Address
+        access(self) let recipients:  {Address:UFix64}
 
         // Returns a boolean value which indicates if the market item is sold out.
         pub fun accept(nftReceiver: &{NonFungibleToken.Receiver}, payment: @{MintasticCredit.Payment}, amount: UInt16): Bool {
@@ -202,8 +202,8 @@ pub contract MintasticMarket {
             let balance = payment.vault.balance
             self.routeServiceShare(payment: <- payment.split(amount: balance * self.getServiceShare(amount: payment.vault.balance)))
             self.routeRoyaltyShare(payment: <- payment.split(amount: balance * MintasticNFT.assets[self.assetId]!.royalty))
+            self.routeDefaultShare(payment: <- payment)
 
-            self.routePayment(payment: <- payment, recipient: self.recipient)
             let tokens <- self.nftOffering.provide(amount: amount)
             for key in tokens.getIDs() {
                 nftReceiver.deposit(token: <-tokens.withdraw(withdrawID: key))
@@ -212,6 +212,17 @@ pub contract MintasticMarket {
 
             emit MarketItemAccepted(assetId: self.assetId)
             return self.nftOffering.getSupply() == 0
+        }
+
+        access(self) fun routeDefaultShare(payment: @{MintasticCredit.Payment}) {
+            let addresses = self.recipients
+            let balance = payment.vault.balance
+            for address in addresses.keys {
+                let addressPayment <- payment.split(amount: balance * addresses[address]!)
+                self.routePayment(payment: <- addressPayment, recipient: address)
+            }
+            assert(payment.vault.balance == 0.0, message: "invalid recipient payments")
+            destroy payment
         }
 
         access(self) fun routeRoyaltyShare(payment: @{MintasticCredit.Payment}) {
@@ -265,18 +276,25 @@ pub contract MintasticMarket {
 
         destroy() { destroy self.nftOffering }
 
-        init(assetId: String, price: UFix64, nftOffering: @{NFTOffering}, recipient: Address) {
+        init(assetId: String, price: UFix64, nftOffering: @{NFTOffering}, recipients: {Address:UFix64}) {
             pre { MintasticNFT.assets[assetId] != nil: "cannot find asset" }
             self.assetId      = assetId
             self.price        = price
             self.bids         = {}
             self.nftOffering <- nftOffering
-            self.recipient    = recipient
+            self.recipients   = recipients
+
+            assert(recipients.length > 0, message: "no recipient(s) found")
+            var sum:UFix64 = 0.0
+            for value in recipients.values {
+                sum = sum + value
+            }
+            assert(sum == 1.0, message: "invalid recipient shares")
         }
     }
 
-    pub fun createMarketItem(assetId: String, price: UFix64, nftOffering: @{NFTOffering}, recipient: Address): @MarketItem {
-        return <-create MarketItem(assetId: assetId, price: price, nftOffering: <- nftOffering, recipient: recipient)
+    pub fun createMarketItem(assetId: String, price: UFix64, nftOffering: @{NFTOffering}, recipients: {Address:UFix64}): @MarketItem {
+        return <-create MarketItem(assetId: assetId, price: price, nftOffering: <- nftOffering, recipients: recipients)
     }
 
     /**

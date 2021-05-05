@@ -24,7 +24,7 @@ transaction(owner: Address, assetId: String, price: UFix64) {
 
     execute {
         let offering   <- MintasticMarket.createLazyOffer(assetId: assetId, minter: self.minter)
-        let marketItem <- MintasticMarket.createMarketItem(assetId: assetId, price: price, nftOffering: <- offering, recipient: owner)
+        let marketItem <- MintasticMarket.createMarketItem(assetId: assetId, price: price, nftOffering: <- offering, recipients: {owner:1.0})
         self.market.insert(item: <- marketItem)
     }
 }

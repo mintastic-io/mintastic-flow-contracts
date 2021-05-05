@@ -25,7 +25,7 @@ transaction(assetId: String, price: UFix64) {
     execute {
         let tokenIds    = self.nftProvider.borrow()!.getTokenIDs(assetId: assetId)
         let offering   <- MintasticMarket.createListOffer(tokenIds: tokenIds, assetId: assetId, provider: self.nftProvider)
-        let marketItem <- MintasticMarket.createMarketItem(assetId: assetId, price: price, nftOffering: <- offering, recipient: self.address)
+        let marketItem <- MintasticMarket.createMarketItem(assetId: assetId, price: price, nftOffering: <- offering, recipients: {self.address:1.0})
         self.saleOffers.insert(item: <- marketItem)
     }
 }
