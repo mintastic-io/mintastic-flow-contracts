@@ -12,7 +12,6 @@
     "test": "jest -i --testPathIgnorePatterns=\"dist.*\""
   },
   "peerDependencies": {
-    "@mintastic-io/schema": "0.1.3",
     "@onflow/fcl": "0.0.66",
     "@onflow/sdk": "0.0.43",
     "@onflow/types": "0.0.4",
@@ -33,8 +32,7 @@
     "@onflow/sdk": "0.0.43",
     "@onflow/types": "0.0.4",
     "elliptic": "^6.5.3",
-    "sha3": "^2.1.3",
-    "@mintastic-io/schema": "0.1.3"
+    "sha3": "^2.1.3"
   },
   "jest": {
     "testEnvironment": "node",

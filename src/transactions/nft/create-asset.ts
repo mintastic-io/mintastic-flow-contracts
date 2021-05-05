@@ -1,7 +1,6 @@
 import * as fcl from "@onflow/fcl"
 import * as t from "@onflow/types"
 import {CadenceEngine} from "../../cadence-engine";
-import {Asset} from "@mintastic-io/schema/dist/src/api/types";
 
 /**
  * This transaction is used to create an asset in order to mint tokens.
@@ -31,9 +30,9 @@ export function createAsset(asset: Asset, maxSupply: number): (CadenceEngine) =>
                 fcl.arg(asset.assetId, t.String),
                 fcl.arg(asset.content, t.String),
                 fcl.arg(
-                    [
-                        {key: asset.address, value: "1.0"}
-                    ],
+                    asset.addresses.map(e => {
+                        return {key: e.address, value: e.share}
+                    }),
                     t.Dictionary({key: t.Address, value: t.UFix64})
                 ),
                 fcl.arg(asset.royalty, t.UFix64),
@@ -46,4 +45,14 @@ export function createAsset(asset: Asset, maxSupply: number): (CadenceEngine) =>
             .then(txId => fcl.tx(txId).onceSealed())
             .then(_ => asset)
     }
+}
+
+export interface Asset {
+    assetId: string
+    creatorId: string
+    addresses: { address: string, share: string }[]
+    content: string
+    royalty: string
+    series: number
+    type: number
 }
