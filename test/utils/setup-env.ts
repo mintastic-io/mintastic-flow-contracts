@@ -30,6 +30,7 @@ export async function setupEnv(): Promise<TestEnv> {
         .put("0xFlowToken", "0x0ae53cb6e3f42a79") // https://docs.onflow.org/core-contracts/flow-token/
         .put("0xFlowPaymentProvider", mintastic)
         .put("0xFiatPaymentProvider", mintastic)
+        .put("0xPaymentProviderProxy", mintastic)
 
     const engine = new NodeCadenceEngine(mintastic, 0, await AddressMap.fromConfig());
 
@@ -41,7 +42,8 @@ export async function setupEnv(): Promise<TestEnv> {
         "MintasticMarket": mintastic,
         "FlowToken": "0x0ae53cb6e3f42a79",
         "FlowPaymentProvider": mintastic,
-        "FiatPaymentProvider": mintastic
+        "FiatPaymentProvider": mintastic,
+        "PaymentProviderProxy": mintastic
     }
 
     // deploy the contracts
