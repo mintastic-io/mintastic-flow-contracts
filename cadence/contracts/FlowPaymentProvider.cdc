@@ -14,6 +14,8 @@ import FlowToken from 0xFlowToken
  */
 pub contract FlowPaymentProvider {
 
+    pub var totalPayments: UInt64
+
     /**
      * The contract internal flow token vault.
      * Flow tokens get locked into this vault until they get routed to the recipient.
@@ -29,17 +31,21 @@ pub contract FlowPaymentProvider {
     /**
      * The event which is emitted after a successful flow payment transaction
      */
-    pub event FlowPaid(assetId: String, amount: UFix64, currency: String, exchangeRate: UFix64, recipient: Address)
+    pub event FlowPaid(assetId: String, amount: UFix64, currency: String, exchangeRate: UFix64, recipient: Address, pid: UInt64)
 
     /**
      * The flow payment implementation.
      */
     pub resource FlowPayment: MintasticCredit.Payment {
+        pub let id: UInt64
         pub let vault:    @FungibleToken.Vault
         pub let currency: String
         pub let exchangeRate: UFix64
 
         init(vault: @MintasticCredit.Vault, currency: String, exchangeRate: UFix64) {
+            self.id = FlowPaymentProvider.totalPayments
+            FlowPaymentProvider.totalPayments = FlowPaymentProvider.totalPayments + (1 as UInt64)
+
             self.vault   <- vault
             self.currency = currency
             self.exchangeRate = exchangeRate
@@ -107,7 +113,7 @@ pub contract FlowPaymentProvider {
             let vault <- FlowPaymentProvider.vault.withdraw(amount: amount)
             receiver.deposit(from: <- vault)
 
-            emit FlowPaid(assetId: assetId, amount: flowPayment.vault.balance, currency: flowPayment.currency, exchangeRate: flowPayment.exchangeRate, recipient: recipient)
+            emit FlowPaid(assetId: assetId, amount: flowPayment.vault.balance, currency: flowPayment.currency, exchangeRate: flowPayment.exchangeRate, recipient: recipient, pid: flowPayment.id)
             destroy flowPayment
         }
 
@@ -128,6 +134,8 @@ pub contract FlowPaymentProvider {
     }
 
     init() {
+        self.totalPayments = 0
+
         self.vault <- FlowToken.createEmptyVault()
         self.account.save(<- create Administrator(), to: /storage/FlowPaymentProviderAdmin)
 

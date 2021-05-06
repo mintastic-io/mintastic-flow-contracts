@@ -18,6 +18,8 @@ export async function setupEnv(): Promise<TestEnv> {
     const mintastic = await getAccountAddress("Mintastic");
     const alice = await getAccountAddress("Alice");
     const bob = await getAccountAddress("Bob");
+    const carol = await getAccountAddress("Carol");
+    const dan = await getAccountAddress("Dan");
 
     config()
         .put("0xNonFungibleToken", mintastic)
@@ -61,17 +63,23 @@ export async function setupEnv(): Promise<TestEnv> {
 
     const blockHeight = await getLatestBlock().height
 
-    return {engine, mintastic, alice, bob, blockHeight}
+    return {engine, mintastic, alice, bob, carol, dan, blockHeight}
 }
 
 export async function getEnv(): Promise<TestEnv> {
     const mintastic = await getAccountAddress("Mintastic");
     const alice = await getAccountAddress("Alice");
     const bob = await getAccountAddress("Bob");
+    const carol = await getAccountAddress("Carol");
+    const dan = await getAccountAddress("Dan");
     const engine = new NodeCadenceEngine(mintastic, 0, await AddressMap.fromConfig());
     const blockHeight = (await getLatestBlock()).height
 
-    return {engine, mintastic, alice, bob, blockHeight}
+    return {engine, mintastic, alice, bob, carol, dan, blockHeight}
+}
+
+export async function getBlock() {
+    return getLatestBlock().then(e => e.height)
 }
 
 export interface TestEnv {
@@ -79,5 +87,7 @@ export interface TestEnv {
     mintastic: string
     alice: string
     bob: string
+    carol: string
+    dan: string
     blockHeight: number
 }

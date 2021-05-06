@@ -9,6 +9,8 @@ import FungibleToken from 0xFungibleToken
  */
 pub contract FiatPaymentProvider {
 
+    pub var totalPayments: UInt64
+
     /**
      * The minter factory implementation is used to create a new
      * mintastic credit minter on the fly.
@@ -18,17 +20,21 @@ pub contract FiatPaymentProvider {
     /**
      * The event which is emitted after a successful fiat payment transaction
      */
-    pub event FiatPaid(assetId: String, amount: UFix64, currency: String, exchangeRate: UFix64, recipient: Address)
+    pub event FiatPaid(assetId: String, amount: UFix64, currency: String, exchangeRate: UFix64, recipient: Address, pid: UInt64)
 
     /**
      * The fiat payment implementation.
      */
     pub resource FiatPayment: MintasticCredit.Payment {
-        pub let vault:    @FungibleToken.Vault
-        pub let currency: String
+        pub let id:           UInt64
+        pub let vault:        @FungibleToken.Vault
+        pub let currency:     String
         pub let exchangeRate: UFix64
 
         init(vault: @MintasticCredit.Vault, currency: String, exchangeRate: UFix64) {
+            self.id = FiatPaymentProvider.totalPayments
+            FiatPaymentProvider.totalPayments = FiatPaymentProvider.totalPayments + (1 as UInt64)
+
             self.vault   <- vault
             self.currency = currency
             self.exchangeRate = exchangeRate
@@ -92,7 +98,7 @@ pub contract FiatPaymentProvider {
             pre { payment.currency == self.currency: "unsupported currency: ".concat(payment.currency) }
             let fiatPayment <- payment as! @FiatPayment
 
-            emit FiatPaid(assetId: assetId, amount: fiatPayment.vault.balance, currency: fiatPayment.currency, exchangeRate: fiatPayment.exchangeRate, recipient: recipient)
+            emit FiatPaid(assetId: assetId, amount: fiatPayment.vault.balance, currency: fiatPayment.currency, exchangeRate: fiatPayment.exchangeRate, recipient: recipient, pid: fiatPayment.id)
             destroy fiatPayment
         }
 
@@ -103,6 +109,8 @@ pub contract FiatPaymentProvider {
     }
 
     init() {
+        self.totalPayments = 0
+
         let admin1 = self.account.borrow<&MintasticMarket.MarketAdmin>(from: /storage/MintasticMarketAdmin)!
         admin1.setPaymentRouter(currency: "eur", paymentRouter: <- create FiatPaymentRouter(currency: "eur"))
         admin1.setPaymentRouter(currency: "usd", paymentRouter: <- create FiatPaymentRouter(currency: "usd"))

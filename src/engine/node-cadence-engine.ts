@@ -4,7 +4,7 @@ import {ec as EC} from "elliptic";
 import {SHA3} from "sha3";
 import path from "path";
 import {CadenceEngine} from "./cadence-engine";
-import {AddressMap} from "./address-map";
+import {AddressMap} from "../address-map";
 
 export class NodeCadenceEngine implements CadenceEngine{
 
@@ -28,7 +28,7 @@ export class NodeCadenceEngine implements CadenceEngine{
         if (name in this.codeCache)
             return this.codeCache[name];
 
-        const code_path = `../cadence/${name}.cdc`;
+        const code_path = `../../cadence/${name}.cdc`;
         const fs = require("fs");
         let code = this.addressMap.apply(fs.readFileSync(path.join(__dirname, code_path), "utf8"));
 

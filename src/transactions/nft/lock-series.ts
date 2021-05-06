@@ -1,6 +1,6 @@
 import * as fcl from "@onflow/fcl"
 import * as t from "@onflow/types"
-import {CadenceEngine} from "../../cadence-engine";
+import {CadenceEngine} from "../../engine/cadence-engine";
 
 /**
  * This transaction is used to lock a series so that no more assets of the same series

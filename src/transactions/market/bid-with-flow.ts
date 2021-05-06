@@ -1,6 +1,6 @@
 import * as fcl from "@onflow/fcl"
 import * as t from "@onflow/types"
-import {CadenceEngine} from "../../cadence-engine";
+import {CadenceEngine} from "../../engine/cadence-engine";
 
 /**
  * This transaction bids for a NFT by locking flow tokens in a bid instance.

@@ -1,6 +1,6 @@
 import * as fcl from "@onflow/fcl"
 import * as t from "@onflow/types"
-import {CadenceEngine} from "../../cadence-engine";
+import {CadenceEngine} from "../../engine/cadence-engine";
 
 /**
  * This transaction is used to accept a bid on a market item.
@@ -16,7 +16,7 @@ export function acceptBid(owner: string, assetId: string, bidId: number): (Caden
     if (assetId.length == 0)
         throw Error("invalid asset id found");
     if (bidId < 0)
-        throw Error("amount must be greater than or equal zero");
+        throw Error("bidId must be greater than or equal zero");
 
     return (engine: CadenceEngine) => {
         const auth = engine.getAuth(owner);

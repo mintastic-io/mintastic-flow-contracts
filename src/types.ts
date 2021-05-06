@@ -1,0 +1,1 @@
+export type Addresses = { address: string, share: string }[]

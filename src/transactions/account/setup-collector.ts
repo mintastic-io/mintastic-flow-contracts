@@ -1,5 +1,5 @@
 import * as fcl from "@onflow/fcl"
-import {CadenceEngine} from "../../cadence-engine";
+import {CadenceEngine} from "../../engine/cadence-engine";
 
 /**
  * This transaction setup a collector account so that an account address is able

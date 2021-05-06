@@ -15,11 +15,11 @@ import MintasticCredit from 0xMintasticCredit
  * Each payment is divided into different shares for the platform, creator (royalty) and the owner of the asset.
  */
 pub contract MintasticMarket {
-    pub event MarketItemAccepted(assetId: String)
+    pub event MarketItemAccepted(assetId: String, owner: Address, pid: UInt64)
     pub event MarketItemInserted(assetId: String, owner: Address, price: UFix64)
     pub event MarketItemRemoved (assetId: String, owner: Address)
-    pub event MarketItemBidAccepted(bidId: UInt64)
-    pub event MarketItemBidRejected(bidId: UInt64)
+    pub event MarketItemBidAccepted(bidId: UInt64, owner: Address, pid: UInt64)
+    pub event MarketItemBidRejected(bidId: UInt64, owner: Address)
 
     access(self) let marketFees:     {UFix64: UFix64}
     access(self) var bidRegistry:    @MintasticCredit.BidRegistry
@@ -189,6 +189,7 @@ pub contract MintasticMarket {
         pub let assetId: String
         pub var price:   UFix64
         pub let bids:    {UInt64:Int}
+        pub var locked:  UInt64
 
         access(self) let nftOffering: @{NFTOffering}
         access(self) let recipients:  {Address:UFix64}
@@ -199,6 +200,7 @@ pub contract MintasticMarket {
                 self.nftOffering.getSupply() >= Int(amount): "supply/demand mismatch"
                 MintasticMarket.paymentRouters[payment.currency] != nil: "invalid payment currency ".concat(payment.currency)
             }
+            let pid = payment.id
             let balance = payment.vault.balance
             self.routeServiceShare(payment: <- payment.split(amount: balance * self.getServiceShare(amount: payment.vault.balance)))
             self.routeRoyaltyShare(payment: <- payment.split(amount: balance * MintasticNFT.assets[self.assetId]!.royalty))
@@ -210,7 +212,7 @@ pub contract MintasticMarket {
             }
             destroy tokens
 
-            emit MarketItemAccepted(assetId: self.assetId)
+            emit MarketItemAccepted(assetId: self.assetId, owner: self.owner?.address!, pid: pid)
             return self.nftOffering.getSupply() == 0
         }
 
@@ -260,13 +262,16 @@ pub contract MintasticMarket {
 
         pub fun lock(amount: UInt16) {
             self.nftOffering.lock(amount: amount)
+            self.locked = self.locked + UInt64(amount)
         }
 
         pub fun unlock(amount: UInt16) {
             self.nftOffering.unlock(amount: amount)
+            self.locked = self.locked - UInt64(amount)
         }
 
         pub fun setPrice(price: UFix64) {
+            pre { self.locked == (0 as UInt64): "cannot change price due to locked items" }
             self.price = price
             let keys = self.bids.keys
             for key in keys {
@@ -274,7 +279,10 @@ pub contract MintasticMarket {
             }
         }
 
-        destroy() { destroy self.nftOffering }
+        destroy() {
+            assert(self.locked == (0 as UInt64), message: "cannot destroy market item due to locked items")
+            destroy self.nftOffering
+        }
 
         init(assetId: String, price: UFix64, nftOffering: @{NFTOffering}, recipients: {Address:UFix64}) {
             pre { MintasticNFT.assets[assetId] != nil: "cannot find asset" }
@@ -283,6 +291,7 @@ pub contract MintasticMarket {
             self.bids         = {}
             self.nftOffering <- nftOffering
             self.recipients   = recipients
+            self.locked       = 0
 
             assert(recipients.length > 0, message: "no recipient(s) found")
             var sum:UFix64 = 0.0
@@ -352,7 +361,7 @@ pub contract MintasticMarket {
 
         pub fun remove(assetId: String): @MarketItem {
             emit MarketItemRemoved(assetId: assetId, owner: self.owner?.address!)
-            return <-(self.items.remove(key: assetId) ?? panic("missing SaleOffer"))
+            return <-(self.items.remove(key: assetId) ?? panic("missing market item"))
         }
 
         pub fun buy(assetId: String, amount: UInt16, payment: @{MintasticCredit.Payment}, receiver: &{NonFungibleToken.Receiver}) {
@@ -396,7 +405,7 @@ pub contract MintasticMarket {
             assert(self.items[assetId] != nil, message: "market item not found")
             let offer = &self.items[assetId] as &MarketItem
             MintasticMarket.bidRegistry.reject(id: bidId, force: force)
-            emit MarketItemBidRejected(bidId: bidId)
+            emit MarketItemBidRejected(bidId: bidId, owner: self.owner?.address!)
             offer.bids.remove(key: bidId)
         }
 
@@ -405,13 +414,17 @@ pub contract MintasticMarket {
                 MintasticMarket.bidRegistry.bids[bidId] != nil: "bid not found"
                 self.items[assetId] != nil: "asset not found"
                 self.lockedItems[assetId] == nil: "market item is locked"
+                !MintasticNFT.lockedAssets.contains(assetId): "asset is locked"
             }
             let bid <- MintasticMarket.bidRegistry.remove(id: bidId)
             let item = &self.items[assetId] as &MarketItem
 
-            let soldOut = item.accept(nftReceiver: bid.receiver.borrow()!, payment: <- bid.accept(), amount: bid.amount)
+            let payment <- bid.accept()
+            let pid = payment.id
+
+            let soldOut = item.accept(nftReceiver: bid.receiver.borrow()!, payment: <- payment, amount: bid.amount)
             if (soldOut) { destroy self.remove(assetId: assetId) }
-            emit MarketItemBidAccepted(bidId: bidId)
+            emit MarketItemBidAccepted(bidId: bidId, owner: self.owner?.address!, pid: pid)
             destroy bid
         }
 

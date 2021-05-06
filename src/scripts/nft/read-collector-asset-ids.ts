@@ -1,6 +1,6 @@
 import * as fcl from "@onflow/fcl"
 import * as t from "@onflow/types"
-import {CadenceEngine} from "../../cadence-engine";
+import {CadenceEngine} from "../../engine/cadence-engine";
 
 export function readCollectorAssetIds(address: string): (CadenceEngine) => Promise<string[]> {
     return (engine: CadenceEngine) => {

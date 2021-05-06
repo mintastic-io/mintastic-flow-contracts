@@ -129,6 +129,7 @@ pub contract MintasticCredit: FungibleToken {
      * by an PaymentExchange resource.
      */
     pub resource interface Payment {
+        pub let id: UInt64
         pub let vault:    @FungibleToken.Vault
         pub let currency: String
         pub let exchangeRate: UFix64

@@ -1,5 +1,5 @@
 import * as fcl from "@onflow/fcl"
-import {CadenceEngine} from "../../cadence-engine";
+import {CadenceEngine} from "../../engine/cadence-engine";
 
 export function readAllAssetIds(): (CadenceEngine) => Promise<string[]> {
     return (engine: CadenceEngine) => {

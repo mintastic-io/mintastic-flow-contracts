@@ -1,6 +1,6 @@
 import {createAsset, mint, setupCollector} from "../src";
 import {v4 as uuid} from "uuid"
-import {newAsset} from "./utils/assets";
+import {newAsset, newTeamAsset} from "./utils/assets";
 import {createListOffer} from "../src/transactions/market/create-list-offer";
 import {buyWithFiat} from "../src/transactions/market/buy-with-fiat";
 import {createLazyOffer} from "../src/transactions/market/create-lazy-offer";
@@ -13,7 +13,7 @@ import {expectError} from "./utils/assertions";
 import {readAssetIds} from "../src/scripts/account/read-asset-ids";
 import {rejectBid} from "../src/transactions/market/reject-bid";
 import {abortBid} from "../src/transactions/market/abort-bid";
-import {getEnv, setupEnv} from "./utils/setup-env";
+import {getBlock, getEnv, setupEnv} from "./utils/setup-env";
 import path from "path";
 import {init} from "flow-js-testing/dist/utils/init";
 import {readItemPrice} from "../src/scripts/market/read-item-price";
@@ -27,6 +27,7 @@ import {bidWithFlow} from "../src/transactions/market/bid-with-flow";
 import {setupCreator} from "../src/transactions/account/setup-creator";
 import {getEvents} from "./utils/get-events";
 import {lockOffering} from "../src/transactions/market/lock-offering";
+import {transfer} from "../src/transactions/nft/transfer";
 
 describe("test mintastic market contract", function () {
     beforeAll(async () => {
@@ -83,10 +84,12 @@ describe("test mintastic market contract", function () {
         const ids = await engine.execute(readTokenIds(alice));
 
         await engine.execute(createListOffer(alice, asset.assetId!, "1000.0"))
-        await engine.execute(bidWithFiat(alice, bob, asset.assetId!, "500.0", 1));
+        await engine.execute(bidWithFiat(alice, asset.assetId!, "500.0", 1));
 
         const bids = await engine.execute(readBids(alice, asset.assetId!));
         await engine.execute(acceptBid(alice, asset.assetId!, bids[0]));
+
+        await engine.execute(transfer(bob, asset.assetId!, 1))
 
         expect(await engine.execute(readTokenIds(alice))).not.toContain(ids[ids.length - 1]);
         expect(await engine.execute(readTokenIds(bob))).toContain(ids[ids.length - 1]);
@@ -96,12 +99,14 @@ describe("test mintastic market contract", function () {
         const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
 
         await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
-        await engine.execute(bidWithFiat(mintastic, bob, asset.assetId!, "500.0", 1));
+        await engine.execute(bidWithFiat(mintastic, asset.assetId!, "500.0", 1));
 
         expect(await engine.execute(readAssetIds(bob))).not.toContain(asset.assetId);
 
         const bids = await engine.execute(readBids(mintastic, asset.assetId!));
         await engine.execute(acceptBid(mintastic, asset.assetId!, bids[0]));
+
+        await engine.execute(transfer(bob, asset.assetId!, 1))
 
         expect(await engine.execute(readAssetIds(bob))).toContain(asset.assetId);
     });
@@ -110,8 +115,8 @@ describe("test mintastic market contract", function () {
         const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
 
         await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
-        await engine.execute(bidWithFiat(mintastic, bob, asset.assetId!, "500.0", 1));
-        await engine.execute(bidWithFiat(mintastic, bob, asset.assetId!, "450.0", 1));
+        await engine.execute(bidWithFiat(mintastic, asset.assetId!, "500.0", 1));
+        await engine.execute(bidWithFiat(mintastic, asset.assetId!, "450.0", 1));
 
         expect(await engine.execute(readAssetIds(bob))).not.toContain(asset.assetId);
 
@@ -124,8 +129,8 @@ describe("test mintastic market contract", function () {
         const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
 
         await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
-        await engine.execute(bidWithFiat(mintastic, bob, asset.assetId!, "500.0", 1));
-        await engine.execute(bidWithFiat(mintastic, bob, asset.assetId!, "450.0", 1));
+        await engine.execute(bidWithFiat(mintastic, asset.assetId!, "500.0", 1));
+        await engine.execute(bidWithFiat(mintastic, asset.assetId!, "450.0", 1));
 
         expect(await engine.execute(readAssetIds(bob))).not.toContain(asset.assetId);
 
@@ -228,19 +233,99 @@ describe("test mintastic market contract", function () {
         await engine.execute(setupCreator(bob))
         await engine.execute(createListOffer(bob, asset.assetId!, "10000.0"))
 
+        const mintasticBalance = await engine.execute(getBalance(mintastic));
+        const aliceBalance = await engine.execute(getBalance(alice));
+        const bobBalance = await engine.execute(getBalance(bob));
+
         // sell the asset with flow
         const buyer = await getAccountAddress("buyer-" + uuid())
         await engine.execute(setupCollector(buyer))
         await engine.execute(mintFlow(buyer, "1000.0"))
         await engine.execute(buyWithFlow(bob, buyer, asset.assetId!, "10000.0", 1));
 
-        const events = await getEvents("FlowPaymentProvider", "FlowPaid", blockHeight);
-        expect(events.length >= 3).toBeTruthy();
+        const events = await getEvents("FlowPaymentProvider", "FlowPaid", await getBlock());
+        // service share
+        expect(events[0].data.amount).toBe('1000.00000000');
+        expect(events[0].data.recipient).toBe(mintastic);
+        // royalty share
+        expect(events[1].data.amount).toBe('1000.00000000');
+        expect(events[1].data.recipient).toBe(alice);
+        // default share
+        expect(events[2].data.amount).toBe('8000.00000000');
+        expect(events[2].data.recipient).toBe(bob);
 
-        console.log(await engine.execute(getBalance(mintastic)))
-        console.log(await engine.execute(getBalance(alice)))
-        console.log(await engine.execute(getBalance(bob)))
-        console.log(await engine.execute(getBalance(buyer)))
+        expect(await engine.execute(getBalance(mintastic))).toBe(mintasticBalance + 40)
+        expect(await engine.execute(getBalance(alice))).toBe(aliceBalance + 40)
+        expect(await engine.execute(getBalance(bob))).toBe(bobBalance + 320)
+        expect(await engine.execute(getBalance(buyer))).toBe(600.1)
+    });
+    test("team creation share routing", async () => {
+        const {engine, alice, bob, mintastic, carol, dan, blockHeight} = await getEnv()
+
+        const team = [{address: alice, share: "0.4"}, {address: carol, share: "0.4"}, {address: dan, share: "0.2"}]
+        // create an asset and insert it to market
+        const asset = await engine.execute(createAsset(newTeamAsset(uuid(), uuid(), team), 10));
+        await engine.execute(mint(alice, asset.assetId!, 1));
+        await engine.execute(createListOffer(alice, asset.assetId!, "1000.0", team))
+
+        // sell the asset and insert it to market
+        await engine.execute(buyWithFiat(alice, bob, asset.assetId!, "1000.0", 1));
+
+        const fiatEvents = await getEvents("FiatPaymentProvider", "FiatPaid", blockHeight);
+        // service share
+        expect(fiatEvents[0].data.amount).toBe('100.00000000');
+        expect(fiatEvents[0].data.recipient).toBe(mintastic);
+        // royalty share
+        expect(fiatEvents[1].data.amount).toBe('40.00000000');
+        expect(fiatEvents[1].data.recipient).toBe(alice);
+        expect(fiatEvents[2].data.amount).toBe('40.00000000');
+        expect(fiatEvents[2].data.recipient).toBe(carol);
+        expect(fiatEvents[3].data.amount).toBe('20.00000000');
+        expect(fiatEvents[3].data.recipient).toBe(dan);
+        // default share
+        expect(fiatEvents[4].data.amount).toBe('320.00000000');
+        expect(fiatEvents[4].data.recipient).toBe(alice);
+        expect(fiatEvents[5].data.amount).toBe('320.00000000');
+        expect(fiatEvents[5].data.recipient).toBe(carol);
+        expect(fiatEvents[6].data.amount).toBe('160.00000000');
+        expect(fiatEvents[6].data.recipient).toBe(dan);
+
+        const mintasticBalance = await engine.execute(getBalance(mintastic));
+        const aliceBalance = await engine.execute(getBalance(alice));
+        const bobBalance = await engine.execute(getBalance(bob));
+        const carolBalance = await engine.execute(getBalance(carol));
+        const danBalance = await engine.execute(getBalance(dan));
+
+        await engine.execute(setupCreator(bob))
+        await engine.execute(createListOffer(bob, asset.assetId!, "10000.0"))
+
+        // sell the asset with flow
+        const buyer = await getAccountAddress("buyer-" + uuid())
+        await engine.execute(setupCollector(buyer))
+        await engine.execute(mintFlow(buyer, "1000.0"))
+        await engine.execute(buyWithFlow(bob, buyer, asset.assetId!, "10000.0", 1));
+
+        const flowEvents = await getEvents("FlowPaymentProvider", "FlowPaid", await getBlock());
+        // service share
+        expect(flowEvents[0].data.amount).toBe('1000.00000000');
+        expect(flowEvents[0].data.recipient).toBe(mintastic);
+        // royalty share
+        expect(flowEvents[1].data.amount).toBe('400.00000000');
+        expect(flowEvents[1].data.recipient).toBe(alice);
+        expect(flowEvents[2].data.amount).toBe('400.00000000');
+        expect(flowEvents[2].data.recipient).toBe(carol);
+        expect(flowEvents[3].data.amount).toBe('200.00000000');
+        expect(flowEvents[3].data.recipient).toBe(dan);
+        // default share
+        expect(flowEvents[4].data.amount).toBe('8000.00000000');
+        expect(flowEvents[4].data.recipient).toBe(bob);
+
+        expect(await engine.execute(getBalance(mintastic))).toBe(mintasticBalance + 40)
+        expect(await engine.execute(getBalance(alice))).toBe(aliceBalance + 16)
+        expect(await engine.execute(getBalance(bob))).toBe(bobBalance + 320)
+        expect(await engine.execute(getBalance(carol))).toBe(carolBalance + 16)
+        expect(await engine.execute(getBalance(dan))).toBe(danBalance + 8)
+        expect(await engine.execute(getBalance(buyer))).toBe(600.1)
     });
 })
 describe("test mintastic market admin functions", function () {

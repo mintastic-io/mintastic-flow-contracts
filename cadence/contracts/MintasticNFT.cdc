@@ -237,6 +237,10 @@ pub contract MintasticNFT: NonFungibleToken {
             return (self.ownedAssets[assetId] ?? {}).values
         }
 
+        pub fun getEditions(assetId: String): {UInt16:UInt64} {
+            return self.ownedAssets[assetId] ?? {}
+        }
+
         pub fun borrowMintasticNFT(tokenId: UInt64): &MintasticNFT.NFT? {
             if self.ownedNFTs[tokenId] != nil {
                 let ref = &self.ownedNFTs[tokenId] as auth &NonFungibleToken.NFT
@@ -266,8 +270,8 @@ pub contract MintasticNFT: NonFungibleToken {
         pub fun getAssetIDs(): [String]
         pub fun deposit(token: @NonFungibleToken.NFT)
         pub fun batchDeposit(tokens: @NonFungibleToken.Collection)
-
         pub fun getTokenIDs(assetId: String): [UInt64]
+        pub fun getEditions(assetId: String): {UInt16:UInt64}
         pub fun borrowMintasticNFT(tokenId: UInt64): &NFT? {
           post {
             (result == nil) || result?.id == tokenId:
@@ -303,16 +307,19 @@ pub contract MintasticNFT: NonFungibleToken {
 	}
 
 	init() {
-        self.totalSupply = 0
+        self.totalSupply  = 0
         self.lockedTokens = []
         self.lockedAssets = []
         self.lockedSeries = {}
-        self.assets = {}
-        self.maxSupplies = {}
-        self.curSupplies = {}
+        self.assets       = {}
+        self.maxSupplies  = {}
+        self.curSupplies  = {}
 
         self.account.save(<- create AssetRegistry(), to: /storage/AssetRegistry)
-        self.account.save(<- create NFTMinter(), to: /storage/NFTMinter)
+        self.account.save(<- create NFTMinter(),     to: /storage/NFTMinter)
+        self.account.save(<- create Collection(),    to: /storage/MintasticNFTs)
+
+        self.account.link<&{NonFungibleToken.Receiver, MintasticNFT.CollectionPublic}>(/public/MintasticNFTs, target: /storage/MintasticNFTs)
 
         emit ContractInitialized()
 	}

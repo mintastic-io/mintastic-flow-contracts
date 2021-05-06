@@ -3,16 +3,15 @@ import * as t from "@onflow/types"
 import {CadenceEngine} from "../../engine/cadence-engine";
 
 /**
- * This transaction is used to unlock an nft offering of a market item.
- * The transaction is invoked by mintastic.
+ * This transaction is used to transfer a NFT from the mintastic collection to an other address.
  *
- * @param owner the owner of the market item
- * @param assetId the asset id of the market item
- * @param amount the amount of items to lock
+ * @param buyer the recipient address
+ * @param assetId the asset id of the token to transfer
+ * @param amount the amount of tokens to transfer
  */
-export function unlockOffering(owner: string, assetId: string, amount: number): (CadenceEngine) => Promise<void> {
-    if (owner.length == 0)
-        throw Error("invalid owner address found");
+export function transfer(buyer: string, assetId: string, amount: number): (CadenceEngine) => Promise<void> {
+    if (buyer.length == 0)
+        throw Error("invalid buyer address found");
     if (assetId.length == 0)
         throw Error("invalid asset id found");
     if (amount < 0)
@@ -20,16 +19,16 @@ export function unlockOffering(owner: string, assetId: string, amount: number): 
 
     return (engine: CadenceEngine) => {
         const auth = engine.getAuth();
-        const code = engine.getCode("transactions/market/unlock-offering");
+        const code = engine.getCode("transactions/nft/transfer");
 
         return fcl.send([
             fcl.transaction`${code}`,
             fcl.payer(auth),
             fcl.proposer(auth),
             fcl.authorizations([auth]),
-            fcl.limit(1000),
+            fcl.limit(100),
             fcl.args([
-                fcl.arg(owner, t.Address),
+                fcl.arg(buyer, t.Address),
                 fcl.arg(assetId, t.String),
                 fcl.arg(amount, t.UInt16)
             ])
@@ -37,4 +36,14 @@ export function unlockOffering(owner: string, assetId: string, amount: number): 
             .then(fcl.decode)
             .then(txId => fcl.tx(txId).onceSealed())
     }
+}
+
+export interface Asset {
+    assetId: string
+    creatorId: string
+    addresses: { address: string, share: string }[]
+    content: string
+    royalty: string
+    series: number
+    type: number
 }
