@@ -68,6 +68,8 @@ export class NodeCadenceEngine implements CadenceEngine{
     }
 
     private signWithKey = (privateKey: string, msg: string) => {
+        if (privateKey === undefined) throw Error("private key must not be null")
+
         const key = this.ec.keyFromPrivate(Buffer.from(privateKey, "hex"));
         const sig = key.sign(this.hashMsg(msg));
         const n = 32;

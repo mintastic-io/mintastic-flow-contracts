@@ -28,6 +28,7 @@ import {setupCreator} from "../src/transactions/account/setup-creator";
 import {getEvents} from "./utils/get-events";
 import {lockOffering} from "../src/transactions/market/lock-offering";
 import {transfer} from "../src/transactions/nft/transfer";
+import {checkSupply} from "../src/scripts/nft/check-supply";
 
 describe("test mintastic market contract", function () {
     beforeAll(async () => {
@@ -40,9 +41,13 @@ describe("test mintastic market contract", function () {
         const {engine, alice, bob} = await getEnv()
         const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
 
+        expect(await engine.execute(checkSupply(asset.assetId, 10))).toBeTruthy();
+
         // create a list offering
         await engine.execute(mint(alice, asset.assetId!, 10));
         await engine.execute(createListOffer(alice, asset.assetId!, "1000.0"))
+
+        expect(await engine.execute(checkSupply(asset.assetId, 10))).toBeFalsy();
 
         // buy should fail when balance is too low
         await expectError(engine.execute(buyWithFiat(alice, bob, asset.assetId!, "100.0", 10)), invalidBalance);
@@ -329,6 +334,12 @@ describe("test mintastic market contract", function () {
     });
 })
 describe("test mintastic market admin functions", function () {
+    beforeAll(async () => {
+        jest.setTimeout(10000);
+        init(path.resolve(__dirname, "../cadence"));
+        await setupEnv()
+    });
+
     test("change price of a market item", async () => {
         const {engine, alice} = await getEnv()
         const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
@@ -340,5 +351,17 @@ describe("test mintastic market admin functions", function () {
         expect(await engine.execute(readItemPrice(alice, asset.assetId!))).toBe(1000);
         await engine.execute(setItemPrice(alice, asset.assetId!, "500.0"))
         expect(await engine.execute(readItemPrice(alice, asset.assetId!))).toBe(500);
+    });
+    test("cannot change price when market item is locked", async () => {
+        const {engine, alice} = await getEnv()
+        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+
+        // create a list offering
+        await engine.execute(mint(alice, asset.assetId!, 10));
+        await engine.execute(createListOffer(alice, asset.assetId!, "1000.0"))
+
+        await engine.execute(lockOffering(alice, asset.assetId, 2));
+        await expect(engine.execute(setItemPrice(alice, asset.assetId!, "500.0"))).rejects.toContain("cannot change price")
+        expect(await engine.execute(readItemPrice(alice, asset.assetId!))).toBe(1000);
     });
 })

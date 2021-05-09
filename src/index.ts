@@ -8,3 +8,5 @@ export {mint} from "./transactions/nft/mint";
 export {setupCollector} from "./transactions/account/setup-collector";
 export {readAllAssetIds} from "./scripts/nft/read-all-asset-ids";
 export {createAsset} from "./transactions/nft/create-asset";
+export {lockOffering} from "./transactions/market/lock-offering";
+export {unlockOffering} from "./transactions/market/unlock-offering";

@@ -22,9 +22,42 @@ function replaceAll(find, replace, str) {
     return str;
 }
 
+function listFiles(dirPath) {
+    return fs.readdirSync(dirPath);
+}
+
+function readFile(filepath) {
+    return fs.readFileSync(filepath, "utf8");
+}
+
 const stream = fs.createWriteStream('dist/src/contracts.js', {flags: 'a'});
 stream.write('module.exports = {\n');
 
 getAllFiles('./cadence', stream);
 stream.write('}\n');
 stream.end();
+
+// create testnet compatible contracts
+fs.mkdir('dist/cadence/contracts-local/', (error) => {
+    if (error) console.log(error);
+    else console.log("New Directory created successfully !!");
+});
+
+const files = listFiles("./cadence/contracts");
+files.forEach(file => {
+    const stream = fs.createWriteStream('dist/cadence/contracts-local/' + file, {flags: 'a'});
+
+    let content = readFile("./cadence/contracts/" + file);
+    content = content.replace("0xFiatPaymentProvider", '"./FiatPaymentProvider.cdc"');
+    content = content.replace("0xFlowPaymentProvider", '"./FlowPaymentProvider.cdc"');
+    content = content.replace("0xFungibleToken", '"./FungibleToken.cdc"');
+    content = content.replace("0xMintasticCredit", '"./MintasticCredit.cdc"');
+    content = content.replace("0xMintasticMarket", '"./MintasticMarket.cdc"');
+    content = content.replace("0xMintasticNFT", '"./MintasticNFT.cdc"');
+    content = content.replace("0xNonFungibleToken", '"./NonFungibleToken.cdc"');
+    content = content.replace("0xPaymentProviderProxy", '"./PaymentProviderProxy.cdc"');
+    content = content.replace("0xFlowToken", '0x7e60df042a9c0868');
+
+    stream.write(content);
+    stream.end();
+});
