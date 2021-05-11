@@ -1,39 +1,43 @@
-import {createAsset, mint, setupCollector} from "../src";
+import {
+    abortBid,
+    acceptBid,
+    bidWithFiat,
+    bidWithFlow,
+    buyWithFiat,
+    buyWithFlow,
+    createAsset,
+    createLazyOffer,
+    createListOffer,
+    lockOffering,
+    mint,
+    rejectBid,
+    setExchangeRate,
+    setItemPrice,
+    setupCollector,
+    setupCreator,
+    transfer
+} from "../src";
 import {v4 as uuid} from "uuid"
 import {newAsset, newTeamAsset} from "./utils/assets";
-import {createListOffer} from "../src/transactions/market/create-list-offer";
-import {buyWithFiat} from "../src/transactions/market/buy-with-fiat";
-import {createLazyOffer} from "../src/transactions/market/create-lazy-offer";
-import {bidWithFiat} from "../src/transactions/market/bid-with-fiat";
 import {readBids} from "../src/scripts/market/read-bids";
-import {acceptBid} from "../src/transactions/market/accept-bid";
 import {readTokenIds} from "../src/scripts/account/read-token-ids";
 import {bidNotExpired, invalidBalance, invalidDemand, noItem} from "./utils/errors";
 import {expectError} from "./utils/assertions";
 import {readAssetIds} from "../src/scripts/account/read-asset-ids";
-import {rejectBid} from "../src/transactions/market/reject-bid";
-import {abortBid} from "../src/transactions/market/abort-bid";
 import {getBlock, getEnv, setupEnv} from "./utils/setup-env";
 import path from "path";
 import {init} from "flow-js-testing/dist/utils/init";
 import {readItemPrice} from "../src/scripts/market/read-item-price";
-import {setItemPrice} from "../src/transactions/market/set-item-price";
 import {mintFlow} from "../src/transactions/flow/mint-flow";
 import {getBalance} from "../src/scripts/flow/get-balance";
-import {buyWithFlow} from "../src/transactions/market/buy-with-flow";
 import getAccountAddress from "./utils/get-account-address";
-import {setExchangeRate} from "../src/transactions/credit/set-exchange-rate";
-import {bidWithFlow} from "../src/transactions/market/bid-with-flow";
-import {setupCreator} from "../src/transactions/account/setup-creator";
 import {getEvents} from "./utils/get-events";
-import {lockOffering} from "../src/transactions/market/lock-offering";
-import {transfer} from "../src/transactions/nft/transfer";
 import {checkSupply} from "../src/scripts/nft/check-supply";
 import {readItemRecipients} from "../src/scripts/market/read-item-recipients";
 
 describe("test mintastic market contract", function () {
     beforeAll(async () => {
-        jest.setTimeout(10000);
+        jest.setTimeout(15000);
         init(path.resolve(__dirname, "../cadence"));
         await setupEnv()
     });

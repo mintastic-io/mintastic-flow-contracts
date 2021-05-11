@@ -98,8 +98,16 @@ pub contract MintasticNFT: NonFungibleToken {
           MintasticNFT.lockedTokens.append(tokenId)
       }
 
+      pub fun unlockToken(index: Int) {
+          MintasticNFT.lockedTokens.remove(at: index)
+      }
+
       pub fun lockAsset(assetId: String) {
           MintasticNFT.lockedAssets.append(assetId)
+      }
+
+      pub fun unlockAsset(index: Int) {
+          MintasticNFT.lockedAssets.remove(at: index)
       }
 
       pub fun lockSeries(creatorId: String, series: UInt16) {
