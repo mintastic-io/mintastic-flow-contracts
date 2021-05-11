@@ -29,6 +29,7 @@ import {getEvents} from "./utils/get-events";
 import {lockOffering} from "../src/transactions/market/lock-offering";
 import {transfer} from "../src/transactions/nft/transfer";
 import {checkSupply} from "../src/scripts/nft/check-supply";
+import {readItemRecipients} from "../src/scripts/market/read-item-recipients";
 
 describe("test mintastic market contract", function () {
     beforeAll(async () => {
@@ -363,5 +364,16 @@ describe("test mintastic market admin functions", function () {
         await engine.execute(lockOffering(alice, asset.assetId, 2));
         await expect(engine.execute(setItemPrice(alice, asset.assetId!, "500.0"))).rejects.toContain("cannot change price")
         expect(await engine.execute(readItemPrice(alice, asset.assetId!))).toBe(1000);
+    });
+
+    test("get market item recipients", async () => {
+        const {engine, alice} = await getEnv()
+        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+
+        // create a list offering
+        await engine.execute(mint(alice, asset.assetId!, 10));
+        await engine.execute(createListOffer(alice, asset.assetId!, "1000.0"))
+
+        console.log(await engine.execute(readItemRecipients(alice, asset.assetId)));
     });
 })

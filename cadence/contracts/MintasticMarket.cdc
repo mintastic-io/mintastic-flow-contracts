@@ -34,6 +34,7 @@ pub contract MintasticMarket {
         pub let bids:        {UInt64:Int}
         pub fun getSupply(): Int
         pub fun getLocked(): UInt64
+        pub fun getRecipients(): {Address:UFix64}
     }
 
     /**
@@ -273,6 +274,10 @@ pub contract MintasticMarket {
 
         pub fun getLocked(): UInt64 {
             return self.locked
+        }
+
+        pub fun getRecipients(): {Address:UFix64} {
+            return self.recipients
         }
 
         pub fun setPrice(price: UFix64) {
