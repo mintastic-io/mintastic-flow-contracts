@@ -15,7 +15,7 @@ import MintasticCredit from 0xMintasticCredit
  * Each payment is divided into different shares for the platform, creator (royalty) and the owner of the asset.
  */
 pub contract MintasticMarket {
-    pub event MarketItemAccepted(assetId: String, owner: Address, pid: UInt64)
+    pub event MarketItemAccepted(assetId: String, owner: Address, tokenIds: [UInt64], pid: UInt64)
     pub event MarketItemInserted(assetId: String, owner: Address, price: UFix64)
     pub event MarketItemRemoved (assetId: String, owner: Address)
     pub event MarketItemBidAccepted(bidId: UInt64, owner: Address, pid: UInt64)
@@ -209,12 +209,13 @@ pub contract MintasticMarket {
             self.routeDefaultShare(payment: <- payment)
 
             let tokens <- self.nftOffering.provide(amount: amount)
-            for key in tokens.getIDs() {
+            let tokenIds = tokens.getIDs()
+            for key in tokenIds {
                 nftReceiver.deposit(token: <-tokens.withdraw(withdrawID: key))
             }
             destroy tokens
 
-            emit MarketItemAccepted(assetId: self.assetId, owner: self.owner?.address!, pid: pid)
+            emit MarketItemAccepted(assetId: self.assetId, owner: self.owner?.address!, tokenIds: tokenIds, pid: pid)
             return self.nftOffering.getSupply() == 0
         }
 
@@ -432,9 +433,11 @@ pub contract MintasticMarket {
             let payment <- bid.accept()
             let pid = payment.id
 
+            emit MarketItemBidAccepted(bidId: bidId, owner: self.owner?.address!, pid: pid)
+
             let soldOut = item.accept(nftReceiver: bid.receiver.borrow()!, payment: <- payment, amount: bid.amount)
             if (soldOut) { destroy self.remove(assetId: assetId) }
-            emit MarketItemBidAccepted(bidId: bidId, owner: self.owner?.address!, pid: pid)
+
             destroy bid
         }
 
