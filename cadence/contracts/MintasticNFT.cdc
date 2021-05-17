@@ -181,7 +181,7 @@ pub contract MintasticNFT: NonFungibleToken {
             let token <- (self.ownedNFTs.remove(key: withdrawID) ?? panic("missing NFT")) as! @MintasticNFT.NFT
             self.assertLocking(token: &token as &NFT)
             self.ownedAssets[token.data.assetId]?.remove(key: token.data.edition)
-            if (self.ownedAssets.length == 0) {
+            if (self.ownedAssets[token.data.assetId]?.length == 0) {
                 self.ownedAssets.remove(key: token.data.assetId)
             }
 
