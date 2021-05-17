@@ -249,6 +249,10 @@ pub contract MintasticNFT: NonFungibleToken {
             return self.ownedAssets[assetId] ?? {}
         }
 
+        pub fun getOwnedAssets(): {String: {UInt16:UInt64}} {
+            return self.ownedAssets
+        }
+
         pub fun borrowMintasticNFT(tokenId: UInt64): &MintasticNFT.NFT? {
             if self.ownedNFTs[tokenId] != nil {
                 let ref = &self.ownedNFTs[tokenId] as auth &NonFungibleToken.NFT
@@ -280,6 +284,7 @@ pub contract MintasticNFT: NonFungibleToken {
         pub fun batchDeposit(tokens: @NonFungibleToken.Collection)
         pub fun getTokenIDs(assetId: String): [UInt64]
         pub fun getEditions(assetId: String): {UInt16:UInt64}
+        pub fun getOwnedAssets(): {String: {UInt16:UInt64}}
         pub fun borrowMintasticNFT(tokenId: UInt64): &NFT? {
           post {
             (result == nil) || result?.id == tokenId:
