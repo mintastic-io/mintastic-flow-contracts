@@ -8,6 +8,12 @@ import NonFungibleToken from 0xNonFungibleToken
  */
 pub contract MintasticNFT: NonFungibleToken {
 
+    pub let MintasticNFTPublicPath: PublicPath
+    pub let MintasticNFTPrivatePath: PrivatePath
+    pub let MintasticNFTStoragePath: StoragePath
+    pub let AssetRegistryStoragePath: StoragePath
+    pub let NFTMinterStoragePath: StoragePath
+
     pub event ContractInitialized()
     pub event Withdraw(id: UInt64, from: Address?)
     pub event Deposit(id: UInt64, to: Address?)
@@ -16,8 +22,6 @@ pub contract MintasticNFT: NonFungibleToken {
 
     pub var totalSupply:  UInt64
     pub let assets:       {String: Asset}
-    pub let maxSupplies:  {String: UInt16}
-    pub let curSupplies:  {String: UInt16}
     pub let lockedSeries: {String: [UInt16]}
     pub let lockedTokens: [UInt64]
     pub let lockedAssets: [String]
@@ -29,7 +33,7 @@ pub contract MintasticNFT: NonFungibleToken {
 
     // Common interface for the NFT composability.
     pub resource interface Composable {
-        pub let items: @{String:{TokenDataAware}}
+        pub let items: @{String:{TokenDataAware, NonFungibleToken.INFT}}
     }
 
     /**
@@ -41,9 +45,9 @@ pub contract MintasticNFT: NonFungibleToken {
     pub resource NFT: NonFungibleToken.INFT, TokenDataAware, Composable {
         pub let id: UInt64
         pub let data: TokenData
-        pub let items: @{String:{TokenDataAware}}
+        pub let items: @{String:{TokenDataAware, NonFungibleToken.INFT}}
 
-        init(id: UInt64, data: TokenData, items: @{String:{TokenDataAware}}) {
+        init(id: UInt64, data: TokenData, items: @{String:{TokenDataAware, NonFungibleToken.INFT}}) {
             self.id = id
             self.data = data
             self.items <- items
@@ -74,24 +78,17 @@ pub contract MintasticNFT: NonFungibleToken {
      */
     pub resource AssetRegistry {
 
-      pub fun store(asset: Asset, maxSupply: UInt16) {
+      pub fun store(asset: Asset) {
           pre {
             MintasticNFT.assets[asset.assetId] == nil: "asset id already registered"
-            MintasticNFT.maxSupplies[asset.assetId] == nil: "asset id already registered"
-            MintasticNFT.curSupplies[asset.assetId] == nil: "asset id already registered"
             !(MintasticNFT.lockedSeries[asset.creatorId]??[]).contains(asset.series): "series is locked"
           }
           MintasticNFT.assets[asset.assetId] = asset
-          MintasticNFT.maxSupplies[asset.assetId] = maxSupply
-          MintasticNFT.curSupplies[asset.assetId] = 0
       }
 
       pub fun setMaxSupply(assetId: String, supply: UInt16) {
-        pre {
-            supply < MintasticNFT.maxSupplies[assetId] ?? panic("no max supply found"): "supply must be lower than current max supply"
-            supply > MintasticNFT.curSupplies[assetId] ?? panic("no cur supply found"): "supply must be greater than current supply"
-        }
-        MintasticNFT.maxSupplies[assetId] = supply
+        pre { MintasticNFT.assets[assetId] != nil: "asset not found" }
+        MintasticNFT.assets[assetId]!.setMaxSupply(supply: supply)
       }
 
       pub fun lockToken(tokenId: UInt64) {
@@ -139,13 +136,19 @@ pub contract MintasticNFT: NonFungibleToken {
         pub let royalty: UFix64
         pub let series: UInt16
         pub let type: UInt16
+        pub let supply: Supply
 
-        init(creatorId: String, assetId: String, content: String, addresses: {Address:UFix64}, royalty: UFix64, series: UInt16, type: UInt16) {
+        pub fun setMaxSupply(supply: UInt16) {
+            self.supply.setMax(supply: supply)
+        }
+
+        pub fun setCurSupply(supply: UInt16) {
+            self.supply.setCur(supply: supply)
+        }
+
+        init(creatorId: String, assetId: String, content: String, addresses: {Address:UFix64}, royalty: UFix64, series: UInt16, type: UInt16, maxSupply: UInt16) {
             pre {
-                royalty >= 0.0: "royalty must be greater than or equal to zero"
                 royalty <= 0.2: "royalty must be lower than or equal to 0.2"
-                Int(series) >= 0: "series must be greater than or equal to zero"
-                Int(type) >= 0: "type must be greater than or equal to zero"
                 addresses.length > 0: "no address found"
             }
 
@@ -162,6 +165,36 @@ pub contract MintasticNFT: NonFungibleToken {
             self.royalty = royalty
             self.series = series
             self.type = type
+            self.supply = Supply(max: maxSupply)
+        }
+    }
+
+    /**
+     * This structure defines all information about the asset supply.
+     */
+    pub struct Supply {
+        pub var max: UInt16
+        pub var cur: UInt16
+
+        pub fun setMax(supply: UInt16) {
+            pre {
+                supply < self.max: "supply must be lower than current max supply"
+                supply > self.cur: "supply must be greater than current supply"
+            }
+            self.max = supply
+        }
+
+        pub fun setCur(supply: UInt16) {
+            pre {
+                supply <= self.max: "max supply limit reached"
+                supply > self.cur: "supply must be greater than current supply"
+            }
+            self.cur = supply
+        }
+
+        init(max: UInt16) {
+            self.max = max
+            self.cur = 0
         }
     }
 
@@ -297,24 +330,24 @@ pub contract MintasticNFT: NonFungibleToken {
 	pub resource NFTMinter {
 
 		pub fun mint(assetId: String, amount: UInt16): @NonFungibleToken.Collection {
-            pre {
-                MintasticNFT.assets[assetId] != nil: "asset not found"
-                MintasticNFT.maxSupplies[assetId] != nil: "max supply not found"
-                MintasticNFT.curSupplies[assetId] != nil: "cur supply not found"
-                (MintasticNFT.curSupplies[assetId]! + amount) <= MintasticNFT.maxSupplies[assetId]!: "max supply limit reached"
-            }
+            pre { MintasticNFT.assets[assetId] != nil: "asset not found" }
+
             let collection <- create Collection()
+            let supply = MintasticNFT.assets[assetId]!.supply
 
             var a:UInt16 = 0
             while a < amount {
                 a = a + (1 as UInt16)
-                MintasticNFT.curSupplies[assetId] = MintasticNFT.curSupplies[assetId]! + (1 as UInt16)
-                let data = TokenData(assetId: assetId, edition: MintasticNFT.curSupplies[assetId]!)
-			          collection.deposit(token: <- create NFT(id: MintasticNFT.totalSupply, data: data, items: {}))
+                supply.setCur(supply: supply.cur + (1 as UInt16))
+
+                let data = TokenData(assetId: assetId, edition: supply.cur)
+			    collection.deposit(token: <- create NFT(id: MintasticNFT.totalSupply, data: data, items: {}))
 
                 emit Mint(id: MintasticNFT.totalSupply, assetId: assetId, to: self.owner?.address)
                 MintasticNFT.totalSupply = MintasticNFT.totalSupply + (1 as UInt64)
             }
+            MintasticNFT.assets[assetId]!.setCurSupply(supply: supply.cur)
+
             return <- collection
 		}
 	}
@@ -325,14 +358,18 @@ pub contract MintasticNFT: NonFungibleToken {
         self.lockedAssets = []
         self.lockedSeries = {}
         self.assets       = {}
-        self.maxSupplies  = {}
-        self.curSupplies  = {}
 
-        self.account.save(<- create AssetRegistry(), to: /storage/AssetRegistry)
-        self.account.save(<- create NFTMinter(),     to: /storage/NFTMinter)
-        self.account.save(<- create Collection(),    to: /storage/MintasticNFTs)
+        self.MintasticNFTPublicPath   = /public/MintasticNFTs
+        self.MintasticNFTPrivatePath  = /private/MintasticNFTs
+        self.MintasticNFTStoragePath  = /storage/MintasticNFTs
+        self.AssetRegistryStoragePath = /storage/AssetRegistry
+        self.NFTMinterStoragePath     = /storage/NFTMinter
 
-        self.account.link<&{NonFungibleToken.Receiver, MintasticNFT.CollectionPublic}>(/public/MintasticNFTs, target: /storage/MintasticNFTs)
+        self.account.save(<- create AssetRegistry(), to: self.AssetRegistryStoragePath)
+        self.account.save(<- create NFTMinter(),     to: self.NFTMinterStoragePath)
+        self.account.save(<- create Collection(),    to: self.MintasticNFTStoragePath)
+
+        self.account.link<&{NonFungibleToken.Receiver, MintasticNFT.CollectionPublic}>(self.MintasticNFTPublicPath, target: self.MintasticNFTStoragePath)
 
         emit ContractInitialized()
 	}

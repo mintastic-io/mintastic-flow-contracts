@@ -10,7 +10,7 @@ import {CadenceEngine} from "../../engine/cadence-engine";
  * @param assetId the asset id of the market item
  * @param bidId the id of the bid to accept
  */
-export function abortBid(owner: string, assetId: string, bidId: number): (CadenceEngine) => Promise<void> {
+export function cancelBid(owner: string, assetId: string, bidId: number): (CadenceEngine) => Promise<void> {
     if (owner.length == 0)
         throw Error("invalid owner address found");
     if (assetId.length == 0)
@@ -20,7 +20,7 @@ export function abortBid(owner: string, assetId: string, bidId: number): (Cadenc
 
     return (engine: CadenceEngine) => {
         const auth = engine.getAuth(owner);
-        const code = engine.getCode("transactions/market/abort-bid");
+        const code = engine.getCode("transactions/market/cancel-bid");
 
         return fcl.send([
             fcl.transaction`${code}`,

@@ -7,8 +7,8 @@ import MintasticMarket from 0xMintasticMarket
  */
 transaction {
     prepare(signer: AuthAccount) {
-        let Public  = /public/MintasticMarketStore
-        let Storage = /storage/MintasticMarketStore
+        let Public  = MintasticMarket.MintasticMarketStorePublicPath
+        let Storage = MintasticMarket.MintasticMarketStoreStoragePath
 
         if signer.borrow<&MintasticMarket.MarketStore>(from: Storage) == nil {
             let collection <- MintasticMarket.createMarketStore()

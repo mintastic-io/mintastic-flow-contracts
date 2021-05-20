@@ -19,9 +19,9 @@ transaction(owner: Address, buyer: Address, assetId: String, price: UFix64, amou
         let ex2 = "could not borrow mintastic collection reference"
         let ex3 = "could not borrow mintastic credit admin"
 
-        self.nftProvider = getAccount(owner).getCapability<&{MintasticMarket.PublicMarketStore}>(/public/MintasticMarketStore).borrow() ?? panic(ex1)
-        self.nftReceiver = getAccount(buyer).getCapability<&{NonFungibleToken.Receiver}>(/public/MintasticNFTs).borrow() ?? panic(ex2)
-        self.creditAdmin = mintastic.borrow<&MintasticCredit.Administrator>(from: /storage/MintasticCreditAdmin) ?? panic(ex3)
+        self.nftProvider = getAccount(owner).getCapability<&{MintasticMarket.PublicMarketStore}>(MintasticMarket.MintasticMarketStorePublicPath).borrow() ?? panic(ex1)
+        self.nftReceiver = getAccount(buyer).getCapability<&{NonFungibleToken.Receiver}>(MintasticNFT.MintasticNFTPublicPath).borrow() ?? panic(ex2)
+        self.creditAdmin = mintastic.borrow<&MintasticCredit.Administrator>(from: MintasticCredit.MintasticCreditAdminStoragePath) ?? panic(ex3)
     }
 
     execute {

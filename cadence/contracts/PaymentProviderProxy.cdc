@@ -8,7 +8,7 @@ import FungibleToken from 0xFungibleToken
  */
 pub contract PaymentProviderProxy {
 
-    pub let mappings: {Address: {Address: UFix64}}
+    pub let PaymentProviderProxyAdminStoragePath: StoragePath
 
     /**
      * PaymentRouter implementation which is used to delegate
@@ -18,25 +18,40 @@ pub contract PaymentProviderProxy {
     pub resource PaymentRouterProxy : MintasticCredit.PaymentRouter {
 
         pub let delegate: MintasticCredit.PaymentRouter
+        pub let addressMappings: {Address: {Address: UFix64}}
 
         pub fun route(payment: @{MintasticCredit.Payment}, recipient: Address, assetId: String) {
-            if (self.mappings[recipient] != nil) {
-                let addresses = self.mappings[recipient]
+            if (self.addressMappings[recipient] != nil) {
+                let addresses = self.addressMappings[recipient]
                 let balance = payment.vault.balance
 
                 for address in addresses.keys {
                     let addressPayment <- payment.split(amount: balance * addresses[address]!)
-                    self.delegate(payment: addressPayment, recipient: address, assetId: assetId)
+                    self.delegate.route(payment: addressPayment, recipient: address, assetId: assetId)
                 }
                 assert(payment.vault.balance == 0.0, message: "invalid recipient payments")
             }
             else {
-                self.delegate(payment: payment, recipient: recipient, assetId: assetId)
+                self.delegate.route(payment: payment, recipient: recipient, assetId: assetId)
             }
         }
 
+        pub fun setAddressMapping(key: Address, value: {Address: UFix64}) {
+            self.addressMappings[key] = value
+        }
+
+        pub fun getAddressMapping(key: Address): {Address: UFix64} {
+            return self.addressMappings[key]
+        }
+
+        pub fun removeAddressMapping(key: Address) {
+            remove self.addressMappings[key]
+        }
+
         init(delegate: MintasticCredit.PaymentRouter) {
+            assert(!delegate.isInstance(Type<@PaymentRouterProxy>()), "cannot wrap payment router proxy")
             self.delegate = delegate
+            self.addressMappings = {}
         }
     }
 
@@ -46,20 +61,18 @@ pub contract PaymentProviderProxy {
 
     /*
      * This resource is the administrator object of the payment provider proxy.
-     * It can be used to alter the address map which is used to redirect payments.
+     * It can be used to create new payment provider proxy routers.
      */
     pub resource PaymentProviderProxyAdmin {
-        pub fun setMapping(key: Address, value: {Address: UFix64}) {
-            PaymentProviderProxy.mappings[key] = value
-        }
-        pub fun getMapping(key: Address): {Address: UFix64} {
-            return PaymentProviderProxy.mappings[key]
+        pub fun createRouter(delegate: MintasticCredit.PaymentRouter): @PaymentRouterProxy {
+            return <- create PaymentRouterProxy(delegate: delegate)
         }
     }
 
     init() {
-        this.mappings = {}
-        self.account.save(<- create PaymentProviderProxyAdmin(), to: /storage/PaymentProviderProxyAdmin)
+        this.addressMappings = {}
+        self.PaymentProviderProxyAdminStoragePath = /storage/PaymentProviderProxyAdmin
+        self.account.save(<- create PaymentProviderProxyAdmin(), to: self.PaymentProviderProxyAdminStoragePath)
     }
 
 }

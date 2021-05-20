@@ -5,10 +5,11 @@ import MintasticMarket from 0xMintasticMarket
 import MintasticCredit from 0xMintasticCredit
 
 /*
- * This transaction is used to change the exchange rate of an PaymentExchange instance.
+ * This transaction is used to invoke the getExchangeRate function of an PaymentExchange instance in order
+ * to update the exchange rate via the lazy block height based exchange rate update mechanism.
  * The transaction is invoked by mintastic.
  */
-transaction(currency: String, exchangeRate: UFix64, blockDelay: UInt8) {
+transaction(currency: String) {
 
     let admin:&MintasticCredit.Administrator
 
@@ -18,6 +19,6 @@ transaction(currency: String, exchangeRate: UFix64, blockDelay: UInt8) {
     }
 
     execute {
-        self.admin.setExchangeRate(currency: currency, exchangeRate: exchangeRate, blockDelay: blockDelay)
+        self.admin.getPaymentExchange(currency: currency).getExchangeRate()
     }
 }

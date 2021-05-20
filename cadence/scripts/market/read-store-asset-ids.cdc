@@ -7,7 +7,7 @@ pub fun main(address: Address): [String] {
     let ex1 = "cannot borrow mintastic market store reference"
     let ex2 = "no market item found"
 
-    let storeCap = getAccount(address).getCapability(/public/MintasticMarketStore)
+    let storeCap = getAccount(address).getCapability(MintasticMarket.MintasticMarketStorePublicPath)
     let storeRef = storeCap.borrow<&{MintasticMarket.PublicMarketStore}>() ?? panic(ex1)
 
     return storeRef.getAssetIds()

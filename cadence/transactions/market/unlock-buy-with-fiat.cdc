@@ -23,11 +23,11 @@ transaction(owner: Address, buyer: Address, assetId: String, price: UFix64, amou
         let ex4 = "could not borrow mintastic market store"
         let ex5 = "could not borrow mintastic market token"
 
-        self.nftProvider = getAccount(owner).getCapability<&{MintasticMarket.PublicMarketStore}>(/public/MintasticMarketStore).borrow() ?? panic(ex1)
-        self.nftReceiver = getAccount(buyer).getCapability<&{NonFungibleToken.Receiver}>(/public/MintasticNFTs).borrow() ?? panic(ex2)
-        self.creditAdmin = mintastic.borrow<&MintasticCredit.Administrator>(from: /storage/MintasticCreditAdmin) ?? panic(ex3)
-        self.marketStore = getAccount(owner).getCapability<&{MintasticMarket.MarketStoreAdmin}>(/public/MintasticMarketStore).borrow() ?? panic(ex4)
-        self.marketToken = mintastic.borrow<&MintasticMarket.MarketToken>(from: /storage/MintasticMarketToken) ?? panic(ex5)
+        self.nftProvider = getAccount(owner).getCapability<&{MintasticMarket.PublicMarketStore}>(MintasticMarket.MintasticMarketStorePublicPath).borrow() ?? panic(ex1)
+        self.nftReceiver = getAccount(buyer).getCapability<&{NonFungibleToken.Receiver}>(MintasticNFT.MintasticNFTPublicPath).borrow() ?? panic(ex2)
+        self.creditAdmin = mintastic.borrow<&MintasticCredit.Administrator>(from: MintasticCredit.MintasticCreditAdminStoragePath) ?? panic(ex3)
+        self.marketStore = getAccount(owner).getCapability<&{MintasticMarket.MarketStoreAdmin}>(MintasticMarket.MintasticMarketStorePublicPath).borrow() ?? panic(ex4)
+        self.marketToken = mintastic.borrow<&MintasticMarket.MarketToken>(from: MintasticMarket.MintasticMarketTokenStoragePath) ?? panic(ex5)
     }
 
     execute {

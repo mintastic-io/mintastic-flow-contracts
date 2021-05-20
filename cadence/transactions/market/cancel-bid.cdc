@@ -12,11 +12,11 @@ transaction(owner: Address, assetId: String, bidId: UInt64) {
     let marketStore: &{MintasticMarket.PublicMarketStore}
 
     prepare(mintastic: AuthAccount) {
-        let cap = getAccount(owner).getCapability<&{MintasticMarket.PublicMarketStore}>(/public/MintasticMarketStore)
+        let cap = getAccount(owner).getCapability<&{MintasticMarket.PublicMarketStore}>(MintasticMarket.MintasticMarketStorePublicPath)
         self.marketStore = cap.borrow() ?? panic("cannot borrow mintastic market store reference")
     }
 
     execute {
-        self.marketStore.abortBid(assetId: assetId, bidId: bidId)
+        self.marketStore.cancelBid(assetId: assetId, bidId: bidId)
     }
 }

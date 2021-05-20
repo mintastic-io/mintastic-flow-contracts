@@ -1,10 +1,10 @@
 import {
-    abortBid,
     acceptBid,
     bidWithFiat,
     bidWithFlow,
     buyWithFiat,
     buyWithFlow,
+    cancelBid,
     createAsset,
     createLazyOffer,
     createListOffer,
@@ -34,6 +34,7 @@ import getAccountAddress from "./utils/get-account-address";
 import {getEvents} from "./utils/get-events";
 import {checkSupply} from "../src/scripts/nft/check-supply";
 import {readItemRecipients} from "../src/scripts/market/read-item-recipients";
+import {getExchangeRate} from "../src/transactions/credit/get-exchange-rate";
 
 describe("test mintastic market contract", function () {
     beforeAll(async () => {
@@ -145,7 +146,7 @@ describe("test mintastic market contract", function () {
         expect(await engine.execute(readAssetIds(bob))).not.toContain(asset.assetId);
 
         const bids = await engine.execute(readBids(mintastic, asset.assetId!));
-        expectError(engine.execute(abortBid(mintastic, asset.assetId!, bids[0])), bidNotExpired);
+        expectError(engine.execute(cancelBid(mintastic, asset.assetId!, bids[0])), bidNotExpired);
     });
     test("buy NFT (on-chain, list offer)", async () => {
         const {engine, alice} = await getEnv()
@@ -380,4 +381,59 @@ describe("test mintastic market admin functions", function () {
 
         console.log(await engine.execute(readItemRecipients(alice, asset.assetId)));
     });
+
+    test("change flow exchange rate", async () => {
+        const {engine} = await getEnv()
+        await engine.execute(getExchangeRate("flow"))
+
+        let blockHeight = (await getBlock()) + 1
+        await engine.execute(setExchangeRate("flow", "10.0"))
+        await engine.execute(setExchangeRate("flow", "20.0"))
+        await engine.execute(setExchangeRate("flow", "30.0", 5))
+
+        const events1 = await getEvents("FlowPaymentProvider", "ExchangeRateChanged", blockHeight);
+        expect(events1.length).toBe(2);
+
+        blockHeight = (await getBlock()) + 1;
+
+        await engine.execute(getExchangeRate("flow")) // skip block 1
+        await engine.execute(getExchangeRate("flow")) // skip block 2
+        await engine.execute(getExchangeRate("flow")) // skip block 3
+        await engine.execute(getExchangeRate("flow")) // skip block 4
+
+        const events2 = await getEvents("FlowPaymentProvider", "ExchangeRateChanged", blockHeight);
+        expect(events2.length).toBe(0);
+
+        await engine.execute(getExchangeRate("flow")) // skip block 5
+        const events3 = await getEvents("FlowPaymentProvider", "ExchangeRateChanged", blockHeight);
+        expect(events3.length).toBe(1);
+    });
+
+    test("change fiat exchange rate", async () => {
+        const {engine} = await getEnv()
+        await engine.execute(getExchangeRate("eur"))
+
+        let blockHeight = (await getBlock()) + 1
+        await engine.execute(setExchangeRate("eur", "10.0"))
+        await engine.execute(setExchangeRate("eur", "20.0"))
+        await engine.execute(setExchangeRate("eur", "30.0", 5))
+
+        const events1 = await getEvents("FiatPaymentProvider", "ExchangeRateChanged", blockHeight);
+        expect(events1.length).toBe(2);
+
+        blockHeight = (await getBlock()) + 1;
+
+        await engine.execute(getExchangeRate("eur")) // skip block 1
+        await engine.execute(getExchangeRate("eur")) // skip block 2
+        await engine.execute(getExchangeRate("eur")) // skip block 3
+        await engine.execute(getExchangeRate("eur")) // skip block 4
+
+        const events2 = await getEvents("FiatPaymentProvider", "ExchangeRateChanged", blockHeight);
+        expect(events2.length).toBe(0);
+
+        await engine.execute(getExchangeRate("eur")) // skip block 5
+        const events3 = await getEvents("FiatPaymentProvider", "ExchangeRateChanged", blockHeight);
+        expect(events3.length).toBe(1);
+    });
+
 })

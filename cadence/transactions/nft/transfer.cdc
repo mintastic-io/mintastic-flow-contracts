@@ -13,8 +13,8 @@ transaction(buyer: Address, assetId: String, amount: UInt16) {
         let ex1 = "could not borrow mintastic nft provider"
         let ex2 = "could not borrow mintastic nft receiver"
 
-        self.nftProvider = mintastic.borrow<&MintasticNFT.Collection>(from:/storage/MintasticNFTs) ?? panic(ex1)
-        self.nftReceiver = getAccount(buyer).getCapability<&{NonFungibleToken.Receiver}>(/public/MintasticNFTs)
+        self.nftProvider = mintastic.borrow<&MintasticNFT.Collection>(from:MintasticNFT.MintasticNFTStoragePath) ?? panic(ex1)
+        self.nftReceiver = getAccount(buyer).getCapability<&{NonFungibleToken.Receiver}>(MintasticNFT.MintasticNFTPublicPath)
     }
 
     execute {

@@ -13,7 +13,7 @@ transaction(owner: Address, assetId: String, bidId: UInt64) {
 
     prepare(owner: AuthAccount) {
         let ex = "cannot borrow mintastic market store reference"
-        self.marketStore = owner.borrow<&MintasticMarket.MarketStore>(from: /storage/MintasticMarketStore) ?? panic(ex)
+        self.marketStore = owner.borrow<&MintasticMarket.MarketStore>(from: MintasticMarket.MintasticMarketStoreStoragePath) ?? panic(ex)
     }
 
     execute {

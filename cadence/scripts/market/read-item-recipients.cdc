@@ -5,7 +5,7 @@ import MintasticMarket from 0xMintasticMarket
  * to the given address and asset id.
  */
 pub fun main(address: Address, assetId: String): {Address:UFix64} {
-    let storeCap = getAccount(address).getCapability(/public/MintasticMarketStore)
+    let storeCap = getAccount(address).getCapability(MintasticMarket.MintasticMarketStorePublicPath)
     let storeRef = storeCap.borrow<&{MintasticMarket.PublicMarketStore}>() ?? panic("cannot borrow market store")
 
     let item = storeRef.borrowMarketItem(assetId: assetId) ?? panic("no market item found")

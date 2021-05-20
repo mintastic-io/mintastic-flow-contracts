@@ -12,8 +12,11 @@ transaction(recipient: Address, assetId: String, amount: UInt16) {
         let ex1 = "could not borrow nft minter reference"
         let ex2 = "Could not get receiver reference to the NFT Collection"
 
-        self.minterRef = mintastic.borrow<&MintasticNFT.NFTMinter>(from: /storage/NFTMinter) ?? panic(ex1)
-        self.receiver  = getAccount(recipient).getCapability(/public/MintasticNFTs).borrow<&{MintasticNFT.CollectionPublic}>() ?? panic(ex2)
+        let Public  = MintasticNFT.MintasticNFTPublicPath
+        let Storage = MintasticNFT.NFTMinterStoragePath
+
+        self.minterRef = mintastic.borrow<&MintasticNFT.NFTMinter>(from: Storage) ?? panic(ex1)
+        self.receiver  = getAccount(recipient).getCapability(Public).borrow<&{MintasticNFT.CollectionPublic}>() ?? panic(ex2)
     }
 
     execute {

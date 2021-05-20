@@ -14,6 +14,10 @@ pub contract MintasticCredit: FungibleToken {
     pub var totalSupply:        UFix64
     access(self) let exchanges: @{String: {PaymentExchange}}
 
+    pub let MintasticCreditPublicPath: PublicPath
+    pub let MintasticCreditStoragePath: StoragePath
+    pub let MintasticCreditAdminStoragePath: StoragePath
+
     pub event TokensInitialized(initialSupply: UFix64)
     pub event TokensWithdrawn(amount: UFix64, from: Address?)
     pub event TokensDeposited(amount: UFix64, to: Address?)
@@ -67,10 +71,13 @@ pub contract MintasticCredit: FungibleToken {
             let prevExchange <- MintasticCredit.exchanges[currency] <- exchange
             destroy prevExchange
         }
-        pub fun setExchangeRate(currency: String, exchangeRate: UFix64) {
+        pub fun getPaymentExchange(currency: String): &{PaymentExchange} {
+            return &MintasticCredit.exchanges[currency] as &{PaymentExchange}
+        }
+        pub fun setExchangeRate(currency: String, exchangeRate: UFix64, blockDelay: UInt8) {
             pre { MintasticCredit.exchanges[currency] != nil: "unknown currency ".concat(currency) }
             let exchange = &MintasticCredit.exchanges[currency] as &{PaymentExchange}
-            exchange.setExchangeRate(exchangeRate: exchangeRate)
+            exchange.setExchangeRate(exchangeRate: exchangeRate, blockDelay: blockDelay)
         }
         pub fun createCredits(amount: UFix64): @MintasticCredit.Vault {
             let minter <- self.createMinter(allowedAmount: amount)
@@ -141,8 +148,8 @@ pub contract MintasticCredit: FungibleToken {
      * a Payment instance, which can be used to buy a mintastic asset.
      */
     pub resource interface PaymentExchange {
-        pub var exchangeRate: UFix64
-        pub fun setExchangeRate(exchangeRate: UFix64)
+        pub fun getExchangeRate(): UFix64
+        pub fun setExchangeRate(exchangeRate: UFix64, blockDelay: UInt8)
         pub fun exchange(vault: @FungibleToken.Vault): @{Payment}
     }
 
@@ -199,7 +206,7 @@ pub contract MintasticCredit: FungibleToken {
         pub fun registerBid(bid: @MintasticCredit.Bid): UInt64 {
             pre { self.blockLimit > (0 as UInt64): "the bid registry is not initialized" }
             self.totalBids = self.totalBids + (1 as UInt64)
-            self.expireMap[self.totalBids] = getCurrentBlock().view + self.blockLimit
+            self.expireMap[self.totalBids] = getCurrentBlock().height + self.blockLimit
 
             let prev <- self.bids[self.totalBids] <- bid
             destroy prev
@@ -225,7 +232,7 @@ pub contract MintasticCredit: FungibleToken {
             pre {
                 self.bids[id] != nil: "unknown bid id"
                 self.expireMap[id] != nil: "unknown bid id"
-                getCurrentBlock().view < self.expireMap[id]! : "bid already expired"
+                getCurrentBlock().height < self.expireMap[id]! : "bid already expired"
             }
             self.expireMap.remove(key: id)
             return <- self.bids.remove(key: id)!
@@ -237,7 +244,7 @@ pub contract MintasticCredit: FungibleToken {
                 self.expireMap[id] != nil: "unknown bid id"
             }
             if (!force) {
-                assert(getCurrentBlock().view > self.expireMap[id]!, message: "bid not yet expired")
+                assert(getCurrentBlock().height > self.expireMap[id]!, message: "bid not yet expired")
             }
             self.expireMap.remove(key: id)
             let bid <- self.bids.remove(key: id)!
@@ -288,17 +295,21 @@ pub contract MintasticCredit: FungibleToken {
     pub fun getExchangeRate(currency: String): UFix64 {
         pre { MintasticCredit.exchanges[currency] != nil : "cannot change to mintastic credits from ".concat(currency) }
         let exchange = &self.exchanges[currency] as &{PaymentExchange}
-        return exchange.exchangeRate as UFix64
+        return exchange.getExchangeRate()
     }
 
     init() {
         self.totalSupply = 0.0
         self.exchanges  <- {}
 
-        self.account.save(<- create Administrator(), to: /storage/MintasticCreditAdmin)
-        self.account.save(<- MintasticCredit.createEmptyVault(), to: /storage/MintasticCredits)
+        self.MintasticCreditPublicPath       = /public/MintasticCredits
+        self.MintasticCreditStoragePath      = /storage/MintasticCredits
+        self.MintasticCreditAdminStoragePath = /storage/MintasticCreditAdmin
 
-        self.account.link<&{FungibleToken.Receiver}>(/public/MintasticCredits, target: /storage/MintasticCredits)
+        self.account.save(<- create Administrator(), to: self.MintasticCreditAdminStoragePath)
+        self.account.save(<- MintasticCredit.createEmptyVault(), to: self.MintasticCreditStoragePath)
+
+        self.account.link<&{FungibleToken.Receiver}>(self.MintasticCreditPublicPath, target: self.MintasticCreditStoragePath)
         emit TokensInitialized(initialSupply: self.totalSupply)
     }
 }

@@ -3,22 +3,18 @@ import * as t from "@onflow/types"
 import {CadenceEngine} from "../../engine/cadence-engine";
 
 /**
- * This transaction is used to change the exchange rate of an PaymentExchange instance.
+ * This transaction is used to setup a payment router proxy
  * The transaction is invoked by mintastic.
  *
  * @param currency the name of the currency
- * @param exchangeRate the exchange rate to set
- * @param blockDelay the block height delay
  */
-export function setExchangeRate(currency: string, exchangeRate: string, blockDelay: number = 0): (CadenceEngine) => Promise<void> {
+export function setRouterProxy(currency: string): (CadenceEngine) => Promise<void> {
     if (currency.length == 0)
         throw Error("invalid currency found");
-    if (!/^-?\d+(\.\d+)$/.test(exchangeRate))
-        throw Error("invalid asset id found");
 
     return (engine: CadenceEngine) => {
         const auth = engine.getAuth();
-        const code = engine.getCode("transactions/credit/set-exchange-rate");
+        const code = engine.getCode("transactions/credit/set-router-proxy");
 
         return fcl.send([
             fcl.transaction`${code}`,
@@ -27,9 +23,7 @@ export function setExchangeRate(currency: string, exchangeRate: string, blockDel
             fcl.authorizations([auth]),
             fcl.limit(1000),
             fcl.args([
-                fcl.arg(currency, t.String),
-                fcl.arg(exchangeRate, t.UFix64),
-                fcl.arg(blockDelay, t.UInt8)
+                fcl.arg(currency, t.String)
             ])
         ])
             .then(fcl.decode)

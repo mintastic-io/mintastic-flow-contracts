@@ -19,11 +19,13 @@ transaction(owner: Address, assetId: String, price: UFix64, amount: UInt16) {
         let ex1 = "could not borrow mintastic nft provider reference"
         let ex2 = "could not borrow mintastic credit admin"
         let ex3 = "could not borrow flow token vault"
+        let ex4 = "could not borrow flow token receiver"
 
-        self.nftProvider = getAccount(owner).getCapability<&{MintasticMarket.PublicMarketStore}>(/public/MintasticMarketStore).borrow() ?? panic(ex1)
-        self.nftReceiver = buyer.getCapability<&{NonFungibleToken.Receiver}>(/public/MintasticNFTs)
+        self.nftProvider = getAccount(owner).getCapability<&{MintasticMarket.PublicMarketStore}>(MintasticMarket.MintasticMarketStorePublicPath).borrow() ?? panic(ex1)
+        self.nftReceiver = buyer.getCapability<&{NonFungibleToken.Receiver}>(MintasticNFT.MintasticNFTPublicPath)
         self.tokenVault  = buyer.borrow<&FungibleToken.Vault>(from: /storage/flowTokenVault) ?? panic(ex3)
         self.reversal    = buyer.getCapability<&{FungibleToken.Receiver}>(/public/flowTokenReceiver)
+        self.reversal.borrow() ?? panic(ex4)
     }
 
     execute {

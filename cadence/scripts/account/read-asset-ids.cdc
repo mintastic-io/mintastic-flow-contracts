@@ -4,7 +4,7 @@ import MintasticNFT from 0xMintasticNFT
  * This script is used to read al token ids of an mintastic nft collection.
  */
 pub fun main(address: Address): [String] {
-    let collectionCap = getAccount(address).getCapability(/public/MintasticNFTs)
+    let collectionCap = getAccount(address).getCapability(MintasticNFT.MintasticNFTPublicPath)
     let collectionRef = collectionCap.borrow<&{MintasticNFT.CollectionPublic}>() ?? panic("Could not borrow collection")
 
     return collectionRef.getAssetIDs()

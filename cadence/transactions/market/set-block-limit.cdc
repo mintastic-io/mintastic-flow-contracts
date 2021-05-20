@@ -13,7 +13,7 @@ transaction(blockLimit: UInt64) {
 
     prepare(mintastic: AuthAccount) {
         let ex = "could not borrow mintastic market admin reference"
-        self.admin = mintastic.borrow<&MintasticMarket.MarketAdmin>(from: /storage/MintasticMarketAdmin) ?? panic(ex)
+        self.admin = mintastic.borrow<&MintasticMarket.MarketAdmin>(from: MintasticMarket.MintasticMarketAdminStoragePath) ?? panic(ex)
     }
 
     execute {

@@ -9,11 +9,11 @@ transaction(creatorId: String, assetId: String, content: String, addresses: {Add
 
     prepare(mintastic: AuthAccount) {
         let ex = "could not borrow asset registry reference"
-        self.assetRegistry = mintastic.borrow<&MintasticNFT.AssetRegistry>(from: /storage/AssetRegistry) ?? panic(ex)
+        self.assetRegistry = mintastic.borrow<&MintasticNFT.AssetRegistry>(from: MintasticNFT.AssetRegistryStoragePath) ?? panic(ex)
     }
 
     execute {
-        let asset = MintasticNFT.Asset(creatorId: creatorId, assetId: assetId, content: content, addresses: addresses, royalty: royalty, series: series, type: type)
-        self.assetRegistry.store(asset: asset, maxSupply: maxSupply)
+        let asset = MintasticNFT.Asset(creatorId: creatorId, assetId: assetId, content: content, addresses: addresses, royalty: royalty, series: series, type: type, maxSupply: maxSupply)
+        self.assetRegistry.store(asset: asset)
     }
 }

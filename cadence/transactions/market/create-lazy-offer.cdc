@@ -12,8 +12,8 @@ transaction(owner: Address, assetId: String, price: UFix64) {
     let market: &MintasticMarket.MarketStore
 
     prepare(mintastic: AuthAccount) {
-        let Storage1 = /storage/NFTMinter
-        let Storage2 = /storage/MintasticMarketStore
+        let Storage1 = MintasticNFT.NFTMinterStoragePath
+        let Storage2 = MintasticMarket.MintasticMarketStoreStoragePath
 
         let ex1 = "could not borrow nft minter"
         let ex2 = "could not borrow nft market"

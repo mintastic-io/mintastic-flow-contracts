@@ -1,12 +1,15 @@
 import {CadenceEngine} from "./cadence-engine";
 import * as fcl from "@onflow/fcl"
+import {AddressMap} from "../address-map";
 
 export class WebCadenceEngine implements CadenceEngine {
 
     private readonly codeMap = {}
 
-    constructor(codeMap: {}) {
-        this.codeMap = codeMap;
+    constructor(codeMap: {}, addressMap: AddressMap) {
+        Object.keys(codeMap).forEach(key => {
+            this.codeMap[key] = addressMap.apply(codeMap[key]);
+        })
     }
 
     public execute<T>(callback: (CadenceEngine) => Promise<T>): Promise<T> {

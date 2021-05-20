@@ -8,7 +8,7 @@ transaction(assetId: String, supply: UInt16) {
 
     prepare(mintastic: AuthAccount) {
         let ex = "could not borrow asset registry reference"
-        self.assetRegistry = mintastic.borrow<&MintasticNFT.AssetRegistry>(from: /storage/AssetRegistry) ?? panic(ex)
+        self.assetRegistry = mintastic.borrow<&MintasticNFT.AssetRegistry>(from: MintasticNFT.AssetRegistryStoragePath) ?? panic(ex)
     }
 
     execute {

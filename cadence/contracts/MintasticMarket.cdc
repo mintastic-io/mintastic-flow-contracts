@@ -21,6 +21,11 @@ pub contract MintasticMarket {
     pub event MarketItemBidAccepted(bidId: UInt64, owner: Address, pid: UInt64)
     pub event MarketItemBidRejected(bidId: UInt64, owner: Address)
 
+    pub let MintasticMarketStorePublicPath:  PublicPath
+    pub let MintasticMarketAdminStoragePath: StoragePath
+    pub let MintasticMarketStoreStoragePath: StoragePath
+    pub let MintasticMarketTokenStoragePath: StoragePath
+
     access(self) let marketFees:     {UFix64: UFix64}
     access(self) var bidRegistry:    @MintasticCredit.BidRegistry
     access(self) let paymentRouters: @{String: {MintasticCredit.PaymentRouter}}
@@ -117,7 +122,8 @@ pub contract MintasticMarket {
         }
 
         pub fun getSupply(): Int {
-            return Int(MintasticNFT.maxSupplies[self.assetId]! - MintasticNFT.curSupplies[self.assetId]!)
+            let supply = MintasticNFT.assets[self.assetId]!.supply
+            return Int(supply.max - supply.cur)
         }
 
         pub fun lock(amount: UInt16) {
@@ -152,15 +158,16 @@ pub contract MintasticMarket {
             pre { self.getSupply() >= Int(amount): "supply/demand mismatch" }
             assert((self.getSupply() - Int(self.locked)) >= Int(amount), message: "supply/demand mismatch due to locked elements")
             assert(!MintasticNFT.lockedAssets.contains(self.assetId), message: "asset is locked")
-            assert(getCurrentBlock().view < self.blockView, message: "time offering elapsed")
+            assert(getCurrentBlock().height < self.blockView, message: "time offering elapsed")
             return <- self.minter.mint(assetId: self.assetId, amount: amount)
         }
 
         pub fun getSupply(): Int {
-            if (getCurrentBlock().view >= self.blockView) {
+            if (getCurrentBlock().height >= self.blockView) {
                 return 0
             }
-            return Int(MintasticNFT.maxSupplies[self.assetId]! - MintasticNFT.curSupplies[self.assetId]!)
+            let supply = MintasticNFT.assets[self.assetId]!.supply
+            return Int(supply.max - supply.cur)
         }
 
         pub fun lock(amount: UInt16) {
@@ -255,8 +262,8 @@ pub contract MintasticMarket {
         }
 
         access(self) fun routePayment(payment: @{MintasticCredit.Payment}, recipient: Address) {
-            let paymentService = &MintasticMarket.paymentRouters[payment.currency] as! &{MintasticCredit.PaymentRouter}
-            paymentService.route(payment: <- payment, recipient: recipient, assetId: self.assetId)
+            let paymentRouter = &MintasticMarket.paymentRouters[payment.currency] as! &{MintasticCredit.PaymentRouter}
+            paymentRouter.route(payment: <- payment, recipient: recipient, assetId: self.assetId)
         }
 
         pub fun getSupply(): Int {
@@ -334,7 +341,7 @@ pub contract MintasticMarket {
         pub fun insert(item: @MarketItem)
         pub fun remove(assetId: String): @MarketItem
         pub fun acceptBid(assetId: String, bidId: UInt64)
-        pub fun abortBid(assetId: String, bidId: UInt64)
+        pub fun cancelBid(assetId: String, bidId: UInt64)
         pub fun rejectBid(assetId: String, bidId: UInt64, force: Bool)
     }
 
@@ -346,7 +353,7 @@ pub contract MintasticMarket {
         pub fun borrowMarketItem(assetId: String): &MarketItem{PublicMarketItem}?
         pub fun buy(assetId: String, amount: UInt16, payment: @{MintasticCredit.Payment}, receiver: &{NonFungibleToken.Receiver})
         pub fun bid(assetId: String, amount: UInt16, bidding: @MintasticCredit.Bid)
-        pub fun abortBid(assetId: String, bidId: UInt64)
+        pub fun cancelBid(assetId: String, bidId: UInt64)
     }
 
     /**
@@ -356,7 +363,7 @@ pub contract MintasticMarket {
      * successfully finish the market item sale activity.
      *
      * A bid can be rejected by the market store owner anytime. The bid owner
-     * can also abort the bid but only after the expiration of the block limit of a bid.
+     * can also withdraw the bid but only after the expiration of the block limit of a bid.
      */
     pub resource MarketStore : MarketStoreManager, PublicMarketStore, MarketStoreAdmin {
         pub let items: @{String: MarketItem}
@@ -407,7 +414,7 @@ pub contract MintasticMarket {
             offer.bids[bidId] = offer.bids.length
         }
 
-        pub fun abortBid(assetId: String, bidId: UInt64) {
+        pub fun cancelBid(assetId: String, bidId: UInt64) {
             self.rejectBid(assetId: assetId, bidId: bidId, force: false)
         }
 
@@ -510,7 +517,6 @@ pub contract MintasticMarket {
         pub fun setMarketFee(key: UFix64, value: UFix64) {
             pre {
                 key > 0.0: "market fee key must be greater than zero"
-                value >= 0.0: "market fee value must be greater than zero"
                 value <= 1.0: "market fee value must be lower than or equal one"
             }
             MintasticMarket.marketFees[key] = value
@@ -521,6 +527,9 @@ pub contract MintasticMarket {
         pub fun setPaymentRouter(currency: String, paymentRouter: @{MintasticCredit.PaymentRouter}) {
             let prevPaymentRouter <- MintasticMarket.paymentRouters[currency] <- paymentRouter
             destroy prevPaymentRouter
+        }
+        pub fun getPaymentRouter(currency: String): &{MintasticCredit.PaymentRouter} {
+            return &MintasticMarket.paymentRouters[currency] as &{MintasticCredit.PaymentRouter}
         }
         pub fun getBidRegistry(): &MintasticCredit.BidRegistry {
             return &MintasticMarket.bidRegistry as &MintasticCredit.BidRegistry
@@ -536,12 +545,17 @@ pub contract MintasticMarket {
     }
 
     init() {
+        self.MintasticMarketStorePublicPath  = /public/MintasticMarketStore
+        self.MintasticMarketAdminStoragePath = /storage/MintasticMarketAdmin
+        self.MintasticMarketStoreStoragePath = /storage/MintasticMarketStore
+        self.MintasticMarketTokenStoragePath = /storage/MintasticMarketToken
+
         self.marketFees     = {}
         self.paymentRouters <- {}
         self.bidRegistry    <- MintasticCredit.createBidRegistry(blockLimit: 0)
-        self.account.save(<- create MarketAdmin(), to: /storage/MintasticMarketAdmin)
-        self.account.save(<- create MarketStore(), to: /storage/MintasticMarketStore)
-        self.account.save(<- create MarketToken(), to: /storage/MintasticMarketToken)
-        self.account.link<&{MintasticMarket.PublicMarketStore}>(/public/MintasticMarketStore, target: /storage/MintasticMarketStore)
+        self.account.save(<- create MarketAdmin(), to: self.MintasticMarketAdminStoragePath)
+        self.account.save(<- create MarketStore(), to: self.MintasticMarketStoreStoragePath)
+        self.account.save(<- create MarketToken(), to: self.MintasticMarketTokenStoragePath)
+        self.account.link<&{MintasticMarket.PublicMarketStore}>(self.MintasticMarketStorePublicPath, target: self.MintasticMarketStoreStoragePath)
     }
 }

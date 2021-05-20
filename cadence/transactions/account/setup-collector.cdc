@@ -11,13 +11,13 @@ transaction {
     let capability2: Capability<&{NonFungibleToken.Provider}>
 
     prepare(signer: AuthAccount) {
-        let Public  = /public/MintasticNFTs
-        let Private = /private/MintasticNFTs
-        let Storage = /storage/MintasticNFTs
+        let Public  = MintasticNFT.MintasticNFTPublicPath
+        let Private = MintasticNFT.MintasticNFTPrivatePath
+        let Storage = MintasticNFT.MintasticNFTStoragePath
 
-        if signer.borrow<&MintasticNFT.Collection>(from: /storage/MintasticNFTs) == nil {
+        if signer.borrow<&MintasticNFT.Collection>(from: MintasticNFT.MintasticNFTStoragePath) == nil {
             let collection <- MintasticNFT.createEmptyCollection()
-            signer.save(<-collection, to: /storage/MintasticNFTs)
+            signer.save(<-collection, to: MintasticNFT.MintasticNFTStoragePath)
 
             signer.link<&{NonFungibleToken.Receiver, MintasticNFT.CollectionPublic}>(Public, target: Storage)
             signer.link<&{NonFungibleToken.Provider, MintasticNFT.CollectionPublic}>(Private, target: Storage)

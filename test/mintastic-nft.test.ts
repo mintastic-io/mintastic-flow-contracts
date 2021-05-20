@@ -3,17 +3,19 @@ import {init} from "flow-js-testing/dist/utils/init";
 import {
     createAsset,
     hasCollectorCollection,
+    lockSeries,
     mint,
     readAllAssetIds,
     readCollectorAssetIds,
+    setMaxSupply,
     setupCollector
 } from "../src";
 import {v4 as uuid} from "uuid"
-import {lockSeries} from "../src/transactions/nft/lock-series";
 import {newAsset} from "./utils/assets";
 import {readNextSeries} from "../src/scripts/nft/read-next-series";
-import {setMaxSupply} from "../src/transactions/nft/set-max-supply";
 import {getEnv, setupEnv} from "./utils/setup-env";
+import {readSupply} from "../src/scripts/nft/read-supply";
+import {readOwnedAssets} from "../src/scripts/nft/read-owned-assets";
 
 const CREATOR_ID = uuid();
 
@@ -83,5 +85,32 @@ describe("mintastic contract test suite", function () {
         const asset = await engine.execute(createAsset(newAsset(CREATOR_ID, uuid(), alice), 10));
         await engine.execute(mint(bob, asset.assetId!, 7));
         await expect(engine.execute(mint(bob, asset.assetId!, 7))).rejects.toContain("max supply limit reached");
+    });
+
+    test("read assets", async () => {
+        const {engine, alice, bob} = await getEnv()
+        const asset = await engine.execute(createAsset(newAsset(CREATOR_ID, uuid(), alice), 10));
+        await engine.execute(mint(alice, asset.assetId!, 2));
+        await engine.execute(mint(alice, asset.assetId!, 5));
+
+        const asset2 = await engine.execute(createAsset(newAsset(CREATOR_ID, uuid(), alice), 10));
+        await engine.execute(mint(alice, asset2.assetId!, 2));
+        await engine.execute(mint(alice, asset2.assetId!, 5));
+
+        console.log(await engine.execute(readOwnedAssets(alice)))
+    });
+
+    test("read supply", async () => {
+        const {engine, alice} = await getEnv()
+        const asset = await engine.execute(createAsset(newAsset(CREATOR_ID, uuid(), alice), 10));
+
+        const supplies1 = await engine.execute(readSupply(asset.assetId))
+        expect(supplies1.maxSupply).toBe(10);
+        expect(supplies1.curSupply).toBe(0);
+
+        await engine.execute(mint(alice, asset.assetId!, 2));
+        const supplies2 = await engine.execute(readSupply(asset.assetId))
+        expect(supplies2.maxSupply).toBe(10);
+        expect(supplies2.curSupply).toBe(2);
     });
 })

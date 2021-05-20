@@ -16,8 +16,8 @@ transaction(assetId: String, price: UFix64, recipients: {Address:UFix64}) {
     prepare(owner: AuthAccount) {
         let ex = "could not borrow mintastic sale offers"
 
-        self.nftProvider = owner.getCapability<&{NonFungibleToken.Provider, MintasticNFT.CollectionPublic}>(/private/MintasticNFTs)
-        self.saleOffers  = owner.borrow<&MintasticMarket.MarketStore>(from: /storage/MintasticMarketStore) ?? panic(ex)
+        self.nftProvider = owner.getCapability<&{NonFungibleToken.Provider, MintasticNFT.CollectionPublic}>(MintasticNFT.MintasticNFTPrivatePath)
+        self.saleOffers  = owner.borrow<&MintasticMarket.MarketStore>(from: MintasticMarket.MintasticMarketStoreStoragePath) ?? panic(ex)
     }
 
     execute {

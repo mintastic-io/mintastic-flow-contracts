@@ -12,7 +12,7 @@ export {createAsset} from "./transactions/nft/create-asset";
 export {lockOffering} from "./transactions/market/lock-offering";
 export {unlockOffering} from "./transactions/market/unlock-offering";
 export {setExchangeRate} from "./transactions/credit/set-exchange-rate";
-export {abortBid} from "./transactions/market/abort-bid";
+export {cancelBid} from "./transactions/market/cancel-bid";
 export {acceptBid} from "./transactions/market/accept-bid";
 export {rejectBid} from "./transactions/market/reject-bid";
 export {bidWithFiat} from "./transactions/market/bid-with-fiat";

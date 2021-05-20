@@ -14,9 +14,9 @@ transaction(owner: Address, assetId: String, amount: UInt16) {
 
     prepare(mintastic: AuthAccount) {
         let ex2 = "cannot borrow mintastic market token reference"
-        let storage2 = /storage/MintasticMarketToken
+        let storage2 = MintasticMarket.MintasticMarketTokenStoragePath
 
-        let cap = getAccount(owner).getCapability<&{MintasticMarket.MarketStoreAdmin}>(/public/MintasticMarketStore)
+        let cap = getAccount(owner).getCapability<&{MintasticMarket.MarketStoreAdmin}>(MintasticMarket.MintasticMarketStorePublicPath)
         self.marketStore = cap.borrow() ?? panic("cannot borrow mintastic market store reference")
 
         self.marketToken = mintastic.borrow<&MintasticMarket.MarketToken>(from: storage2) ?? panic(ex2)
