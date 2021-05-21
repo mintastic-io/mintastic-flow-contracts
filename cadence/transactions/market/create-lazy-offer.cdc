@@ -8,22 +8,23 @@ import MintasticMarket  from 0xMintasticMarket
  */
 transaction(owner: Address, assetId: String, price: UFix64) {
 
-    let minter: &MintasticNFT.NFTMinter
+    let minter: &MintasticNFT.MinterFactory
     let market: &MintasticMarket.MarketStore
 
     prepare(mintastic: AuthAccount) {
-        let Storage1 = MintasticNFT.NFTMinterStoragePath
+        let Storage1 = MintasticNFT.MinterFactoryStoragePath
         let Storage2 = MintasticMarket.MintasticMarketStoreStoragePath
 
         let ex1 = "could not borrow nft minter"
         let ex2 = "could not borrow nft market"
 
-        self.minter = mintastic.borrow<&MintasticNFT.NFTMinter>(from: Storage1) ?? panic(ex1)
+        self.minter = mintastic.borrow<&MintasticNFT.MinterFactory>(from: Storage1) ?? panic(ex1)
         self.market = mintastic.borrow<&MintasticMarket.MarketStore>(from: Storage2) ?? panic(ex2)
     }
 
     execute {
-        let offering   <- MintasticMarket.createLazyOffer(assetId: assetId, minter: self.minter)
+        let supply = MintasticNFT.assets[assetId]!.supply.max
+        let offering   <- MintasticMarket.createLazyOffer(assetId: assetId, minter: <- self.minter.createMinter(allowedAmount: supply))
         let marketItem <- MintasticMarket.createMarketItem(assetId: assetId, price: price, nftOffering: <- offering, recipients: {owner:1.0})
         self.market.insert(item: <- marketItem)
     }

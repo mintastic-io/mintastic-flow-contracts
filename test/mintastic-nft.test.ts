@@ -88,7 +88,7 @@ describe("mintastic contract test suite", function () {
     });
 
     test("read assets", async () => {
-        const {engine, alice, bob} = await getEnv()
+        const {engine, alice} = await getEnv()
         const asset = await engine.execute(createAsset(newAsset(CREATOR_ID, uuid(), alice), 10));
         await engine.execute(mint(alice, asset.assetId!, 2));
         await engine.execute(mint(alice, asset.assetId!, 5));

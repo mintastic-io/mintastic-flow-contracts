@@ -12,7 +12,7 @@ pub contract MintasticNFT: NonFungibleToken {
     pub let MintasticNFTPrivatePath: PrivatePath
     pub let MintasticNFTStoragePath: StoragePath
     pub let AssetRegistryStoragePath: StoragePath
-    pub let NFTMinterStoragePath: StoragePath
+    pub let MinterFactoryStoragePath: StoragePath
 
     pub event ContractInitialized()
     pub event Withdraw(id: UInt64, from: Address?)
@@ -326,11 +326,21 @@ pub contract MintasticNFT: NonFungibleToken {
         }
     }
 
+    pub resource MinterFactory {
+        pub fun createMinter(allowedAmount: UInt16): @Minter {
+            return <- create Minter(allowedAmount: allowedAmount)
+        }
+    }
+
     // This resource is used to mint mintastic NFTs.
-	pub resource NFTMinter {
+	pub resource Minter {
+	    pub var allowedAmount: UInt16
 
 		pub fun mint(assetId: String, amount: UInt16): @NonFungibleToken.Collection {
-            pre { MintasticNFT.assets[assetId] != nil: "asset not found" }
+            pre {
+                MintasticNFT.assets[assetId] != nil: "asset not found"
+                self.allowedAmount >= amount: "amount not allowed"
+            }
 
             let collection <- create Collection()
             let supply = MintasticNFT.assets[assetId]!.supply
@@ -347,8 +357,13 @@ pub contract MintasticNFT: NonFungibleToken {
                 MintasticNFT.totalSupply = MintasticNFT.totalSupply + (1 as UInt64)
             }
             MintasticNFT.assets[assetId]!.setCurSupply(supply: supply.cur)
+            self.allowedAmount = self.allowedAmount - amount
 
             return <- collection
+		}
+
+		init(allowedAmount: UInt16) {
+		    self.allowedAmount = allowedAmount
 		}
 	}
 
@@ -363,10 +378,10 @@ pub contract MintasticNFT: NonFungibleToken {
         self.MintasticNFTPrivatePath  = /private/MintasticNFTs
         self.MintasticNFTStoragePath  = /storage/MintasticNFTs
         self.AssetRegistryStoragePath = /storage/AssetRegistry
-        self.NFTMinterStoragePath     = /storage/NFTMinter
+        self.MinterFactoryStoragePath = /storage/MinterFactory
 
         self.account.save(<- create AssetRegistry(), to: self.AssetRegistryStoragePath)
-        self.account.save(<- create NFTMinter(),     to: self.NFTMinterStoragePath)
+        self.account.save(<- create MinterFactory(), to: self.MinterFactoryStoragePath)
         self.account.save(<- create Collection(),    to: self.MintasticNFTStoragePath)
 
         self.account.link<&{NonFungibleToken.Receiver, MintasticNFT.CollectionPublic}>(self.MintasticNFTPublicPath, target: self.MintasticNFTStoragePath)

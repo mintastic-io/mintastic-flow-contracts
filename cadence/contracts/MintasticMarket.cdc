@@ -110,9 +110,9 @@ pub contract MintasticMarket {
      * are going to be minted only after a successful sale.
      */
     pub resource LazyOffering: NFTOffering {
-        pub let assetId:         String
-        pub var locked:          UInt64
-        access(self) let minter: &MintasticNFT.NFTMinter
+        pub let assetId: String
+        pub var locked:  UInt64
+        pub let minter:  @MintasticNFT.Minter
 
         pub fun provide(amount: UInt16): @NonFungibleToken.Collection {
             pre { self.getSupply() >= Int(amount): "supply/demand mismatch" }
@@ -136,10 +136,14 @@ pub contract MintasticMarket {
             self.locked = self.locked - UInt64(amount)
         }
 
-        init(assetId: String, minter: &MintasticNFT.NFTMinter) {
+        init(assetId: String, minter: @MintasticNFT.Minter) {
             self.assetId = assetId
-            self.minter  = minter
+            self.minter <- minter
             self.locked  = 0
+        }
+
+        destroy() {
+            destroy self.minter
         }
     }
 
@@ -152,7 +156,7 @@ pub contract MintasticMarket {
         pub let assetId:         String
         pub let blockView:       UInt64
         pub var locked:          UInt64
-        access(self) let minter: &MintasticNFT.NFTMinter
+        access(self) let minter: &MintasticNFT.Minter
 
         pub fun provide(amount: UInt16): @NonFungibleToken.Collection {
             pre { self.getSupply() >= Int(amount): "supply/demand mismatch" }
@@ -180,7 +184,7 @@ pub contract MintasticMarket {
             self.locked = self.locked - UInt64(amount)
         }
 
-        init(assetId: String, blockView: UInt64, minter: &MintasticNFT.NFTMinter) {
+        init(assetId: String, blockView: UInt64, minter: &MintasticNFT.Minter) {
             self.assetId   = assetId
             self.blockView = blockView
             self.minter    = minter
@@ -495,11 +499,11 @@ pub contract MintasticMarket {
         return <- create ListOffering(tokenIds: tokenIds, assetId: assetId, provider: provider)
     }
 
-    pub fun createLazyOffer(assetId: String, minter: &MintasticNFT.NFTMinter): @LazyOffering {
-        return <- create LazyOffering(assetId: assetId, minter: minter)
+    pub fun createLazyOffer(assetId: String, minter: @MintasticNFT.Minter): @LazyOffering {
+        return <- create LazyOffering(assetId: assetId, minter: <- minter)
     }
 
-    pub fun createTimeOffer(assetId: String, blockView: UInt64, minter: &MintasticNFT.NFTMinter): @TimeOffering {
+    pub fun createTimeOffer(assetId: String, blockView: UInt64, minter: &MintasticNFT.Minter): @TimeOffering {
         return <- create TimeOffering(assetId: assetId, blockView: blockView, minter: minter)
     }
 
