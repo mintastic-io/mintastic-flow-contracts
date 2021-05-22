@@ -23,8 +23,6 @@ pub contract MintasticNFT: NonFungibleToken {
     pub var totalSupply:  UInt64
     pub let assets:       {String: Asset}
     pub let lockedSeries: {String: [UInt16]}
-    pub let lockedTokens: [UInt64]
-    pub let lockedAssets: [String]
 
     // Common interface for the NFT data.
     pub resource interface TokenDataAware {
@@ -89,22 +87,6 @@ pub contract MintasticNFT: NonFungibleToken {
       pub fun setMaxSupply(assetId: String, supply: UInt16) {
         pre { MintasticNFT.assets[assetId] != nil: "asset not found" }
         MintasticNFT.assets[assetId]!.setMaxSupply(supply: supply)
-      }
-
-      pub fun lockToken(tokenId: UInt64) {
-          MintasticNFT.lockedTokens.append(tokenId)
-      }
-
-      pub fun unlockToken(index: Int) {
-          MintasticNFT.lockedTokens.remove(at: index)
-      }
-
-      pub fun lockAsset(assetId: String) {
-          MintasticNFT.lockedAssets.append(assetId)
-      }
-
-      pub fun unlockAsset(index: Int) {
-          MintasticNFT.lockedAssets.remove(at: index)
       }
 
       pub fun lockSeries(creatorId: String, series: UInt16) {
@@ -212,7 +194,6 @@ pub contract MintasticNFT: NonFungibleToken {
 
         pub fun withdraw(withdrawID: UInt64): @NonFungibleToken.NFT {
             let token <- (self.ownedNFTs.remove(key: withdrawID) ?? panic("missing NFT")) as! @MintasticNFT.NFT
-            self.assertLocking(token: &token as &NFT)
             self.ownedAssets[token.data.assetId]?.remove(key: token.data.edition)
             if (self.ownedAssets[token.data.assetId]?.length == 0) {
                 self.ownedAssets.remove(key: token.data.assetId)
@@ -239,8 +220,6 @@ pub contract MintasticNFT: NonFungibleToken {
             }
             self.ownedAssets[token.data.assetId]!.insert(key: token.data.edition, token.id)
 
-            self.assertLocking(token: &token as &NFT)
-
             let oldToken <- self.ownedNFTs[id] <- token
             emit Deposit(id: id, to: self.owner?.address)
             destroy oldToken
@@ -251,15 +230,6 @@ pub contract MintasticNFT: NonFungibleToken {
                 self.deposit(token: <-tokens.withdraw(withdrawID: key))
             }
             destroy tokens
-        }
-
-        access(contract) fun assertLocking(token: &NFT) {
-            if (MintasticNFT.lockedAssets.contains(token.data.assetId)) {
-              panic("Asset is locked")
-            }
-            if (MintasticNFT.lockedTokens.contains(token.id)) {
-              panic("Asset is locked")
-            }
         }
 
         pub fun getIDs(): [UInt64] {
@@ -369,8 +339,6 @@ pub contract MintasticNFT: NonFungibleToken {
 
 	init() {
         self.totalSupply  = 0
-        self.lockedTokens = []
-        self.lockedAssets = []
         self.lockedSeries = {}
         self.assets       = {}
 

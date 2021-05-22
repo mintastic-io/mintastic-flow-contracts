@@ -65,13 +65,11 @@ pub contract MintasticMarket {
         pub fun provide(amount: UInt16): @NonFungibleToken.Collection {
             pre { self.getSupply() >= Int(amount): "supply/demand mismatch" }
             assert((self.getSupply() - Int(self.locked)) >= Int(amount), message: "supply/demand mismatch due to locked elements")
-            assert(!MintasticNFT.lockedAssets.contains(self.assetId), message: "asset is locked")
             let collection <- MintasticNFT.createEmptyCollection()
             var a:UInt16 = 0
             while a < amount {
                 a = a + (1 as UInt16)
                 let tokenId = self.tokenIds.removeFirst()
-                assert(!MintasticNFT.lockedTokens.contains(tokenId), message: "token is locked")
                 let token <- self.provider.borrow()!.withdraw(withdrawID: tokenId) as! @MintasticNFT.NFT
                 assert(token.data.assetId == self.assetId, message: "asset id mismatch")
                 collection.deposit(token: <- token)
@@ -117,7 +115,6 @@ pub contract MintasticMarket {
         pub fun provide(amount: UInt16): @NonFungibleToken.Collection {
             pre { self.getSupply() >= Int(amount): "supply/demand mismatch" }
             assert((self.getSupply() - Int(self.locked)) >= Int(amount), message: "supply/demand mismatch due to locked elements")
-            assert(!MintasticNFT.lockedAssets.contains(self.assetId), message: "asset is locked")
             return <- self.minter.mint(assetId: self.assetId, amount: amount)
         }
 
@@ -161,7 +158,6 @@ pub contract MintasticMarket {
         pub fun provide(amount: UInt16): @NonFungibleToken.Collection {
             pre { self.getSupply() >= Int(amount): "supply/demand mismatch" }
             assert((self.getSupply() - Int(self.locked)) >= Int(amount), message: "supply/demand mismatch due to locked elements")
-            assert(!MintasticNFT.lockedAssets.contains(self.assetId), message: "asset is locked")
             assert(getCurrentBlock().height < self.blockView, message: "time offering elapsed")
             return <- self.minter.mint(assetId: self.assetId, amount: amount)
         }
@@ -390,7 +386,6 @@ pub contract MintasticMarket {
             pre {
                 self.items[assetId] != nil: "market item not found"
                 self.lockedItems[assetId] == nil: "market item is locked"
-                !MintasticNFT.lockedAssets.contains(assetId): "asset is locked"
             }
             let offer = &self.items[assetId] as &MarketItem
 
@@ -411,7 +406,6 @@ pub contract MintasticMarket {
             pre {
                 self.items[assetId] != nil: "market item not found"
                 self.lockedItems[assetId] == nil: "market item is locked"
-                !MintasticNFT.lockedAssets.contains(assetId): "asset is locked"
             }
             let offer = &self.items[assetId] as &MarketItem
             let bidId = MintasticMarket.bidRegistry.registerBid(bid: <- bidding)
@@ -436,7 +430,6 @@ pub contract MintasticMarket {
                 MintasticMarket.bidRegistry.bids[bidId] != nil: "bid not found"
                 self.items[assetId] != nil: "asset not found"
                 self.lockedItems[assetId] == nil: "market item is locked"
-                !MintasticNFT.lockedAssets.contains(assetId): "asset is locked"
             }
             let bid <- MintasticMarket.bidRegistry.remove(id: bidId)
             let item = &self.items[assetId] as &MarketItem

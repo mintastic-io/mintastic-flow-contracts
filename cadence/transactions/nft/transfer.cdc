@@ -24,7 +24,6 @@ transaction(buyer: Address, assetId: String, amount: UInt16) {
         while a < amount {
             a = a + (1 as UInt16)
             let tokenId = tokenIds.removeFirst()
-            assert(!MintasticNFT.lockedTokens.contains(tokenId), message: "token is locked")
             let token <- self.nftProvider.withdraw(withdrawID: tokenId) as! @MintasticNFT.NFT
             assert(token.data.assetId == assetId, message: "asset id mismatch")
             self.nftReceiver.borrow()!.deposit(token: <- token)

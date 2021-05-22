@@ -143,7 +143,8 @@ pub contract FlowPaymentProvider {
             pre { payment.currency == "flow": "unsupported currency: ".concat(payment.currency) }
             let flowPayment <- payment as! @FlowPayment
 
-            let receiver = getAccount(recipient).getCapability<&{FungibleToken.Receiver}>(/public/flowTokenReceiver).borrow()!
+            let capability = getAccount(recipient).getCapability<&{FungibleToken.Receiver}>(/public/flowTokenReceiver)
+            let receiver = capability.borrow() ?? panic("no fungible token receiver found")
 
             let amount = flowPayment.vault.balance / flowPayment.exchangeRate
             let vault <- FlowPaymentProvider.vault.withdraw(amount: amount)
