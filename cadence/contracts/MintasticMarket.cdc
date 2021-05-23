@@ -553,6 +553,6 @@ pub contract MintasticMarket {
         self.account.save(<- create MarketAdmin(), to: self.MintasticMarketAdminStoragePath)
         self.account.save(<- create MarketStore(), to: self.MintasticMarketStoreStoragePath)
         self.account.save(<- create MarketToken(), to: self.MintasticMarketTokenStoragePath)
-        self.account.link<&{MintasticMarket.PublicMarketStore}>(self.MintasticMarketStorePublicPath, target: self.MintasticMarketStoreStoragePath)
+        self.account.link<&{MintasticMarket.PublicMarketStore, MintasticMarket.MarketStoreAdmin}>(self.MintasticMarketStorePublicPath, target: self.MintasticMarketStoreStoragePath)
     }
 }
