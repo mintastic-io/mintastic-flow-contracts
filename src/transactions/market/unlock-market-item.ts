@@ -3,24 +3,21 @@ import * as t from "@onflow/types"
 import {CadenceEngine} from "../../engine/cadence-engine";
 
 /**
- * This transaction is used to lock a nft offering of a market item.
+ * This transaction is used to unlock a nft market item.
  * The transaction is invoked by mintastic.
  *
  * @param owner the owner of the market item
  * @param assetId the asset id of the market item
- * @param amount the amount of items to lock
  */
-export function lockOffering(owner: string, assetId: string, amount: number): (CadenceEngine) => Promise<void> {
+export function unlockMarketItem(owner: string, assetId: string): (CadenceEngine) => Promise<void> {
     if (owner.length == 0)
         throw Error("invalid owner address found");
     if (assetId.length == 0)
         throw Error("invalid asset id found");
-    if (amount < 0)
-        throw Error("amount must be greater than or equal zero");
 
     return (engine: CadenceEngine) => {
         const auth = engine.getAuth();
-        const code = engine.getCode("transactions/market/lock-offering");
+        const code = engine.getCode("transactions/market/unlock-market-item");
 
         return fcl.send([
             fcl.transaction`${code}`,
@@ -30,8 +27,7 @@ export function lockOffering(owner: string, assetId: string, amount: number): (C
             fcl.limit(1000),
             fcl.args([
                 fcl.arg(owner, t.Address),
-                fcl.arg(assetId, t.String),
-                fcl.arg(amount, t.UInt16)
+                fcl.arg(assetId, t.String)
             ])
         ])
             .then(fcl.decode)

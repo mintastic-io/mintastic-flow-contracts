@@ -12,6 +12,5 @@ pub fun main(address: Address, assetId: String): Int {
     let storeRef = storeCap.borrow<&{MintasticMarket.PublicMarketStore}>() ?? panic(ex1)
 
     let item = storeRef.borrowMarketItem(assetId: assetId) ?? panic(ex2)
-    // return item.getSupply()
-    return 0
+    return item.getSupply()
 }

@@ -5,9 +5,11 @@ import {
     buyWithFiat,
     buyWithFlow,
     cancelBid,
+    createAccount,
     createAsset,
     createLazyOffer,
     createListOffer,
+    hasCollectorCollection,
     lockOffering,
     mint,
     rejectBid,
@@ -15,7 +17,8 @@ import {
     setItemPrice,
     setupCollector,
     setupCreator,
-    transfer
+    transfer,
+    unlockOffering
 } from "../src";
 import {v4 as uuid} from "uuid"
 import {newAsset, newTeamAsset} from "./utils/assets";
@@ -24,9 +27,9 @@ import {readTokenIds} from "../src/scripts/account/read-token-ids";
 import {bidNotExpired, invalidBalance, invalidDemand, noItem} from "./utils/errors";
 import {expectError} from "./utils/assertions";
 import {readAssetIds} from "../src/scripts/account/read-asset-ids";
-import {getBlock, getEnv, setupEnv} from "./utils/setup-env";
+import {getBlockHeight, getEnv, setupEnv} from "./utils/setup-env";
 import path from "path";
-import {init} from "flow-js-testing/dist/utils/init";
+import {init} from "flow-js-testing";
 import {readItemPrice} from "../src/scripts/market/read-item-price";
 import {mintFlow} from "../src/transactions/flow/mint-flow";
 import {getBalance} from "../src/scripts/flow/get-balance";
@@ -35,6 +38,12 @@ import {getEvents} from "./utils/get-events";
 import {checkSupply} from "../src/scripts/nft/check-supply";
 import {readItemRecipients} from "../src/scripts/market/read-item-recipients";
 import {getExchangeRate} from "../src/transactions/credit/get-exchange-rate";
+import {readItemSupply} from "../src/scripts/market/read-item-supply";
+import {removeMarketItem} from "../src/transactions/market/remove-market-item";
+import {readStoreAssetId} from "../src/scripts/market/read-store-asset-ids";
+import {lockMarketItem} from "../src/transactions/market/lock-market-item";
+import {unlockMarketItem} from "../src/transactions/market/unlock-market-item";
+import {hasCreatorCollection} from "../src/scripts/account/has-creator-collection";
 
 describe("test mintastic market contract", function () {
     beforeAll(async () => {
@@ -169,12 +178,12 @@ describe("test mintastic market contract", function () {
         // buy should fail when demand exceeds supply
         await expectError(engine.execute(buyWithFlow(alice, buyer, asset.assetId!, "1000.0", 12)), invalidDemand);
 
-        expect(await engine.execute(getBalance(buyer))).toBe(1000.1)
+        expect(await engine.execute(getBalance(buyer))).toBe(1000.001)
         await engine.execute(buyWithFlow(alice, buyer, asset.assetId!, "1000.0", 2));
-        expect(await engine.execute(getBalance(buyer))).toBe(920.1)
+        expect(await engine.execute(getBalance(buyer))).toBe(920.001)
         await engine.execute(buyWithFlow(alice, buyer, asset.assetId!, "1000.0", 6));
         await engine.execute(buyWithFlow(alice, buyer, asset.assetId!, "1000.0", 2));
-        expect(await engine.execute(getBalance(buyer))).toBe(600.1)
+        expect(await engine.execute(getBalance(buyer))).toBe(600.001)
 
         // buy should fail when market item is sold out
         await expectError(engine.execute(buyWithFlow(alice, buyer, asset.assetId!, "1000.0", 2)), noItem);
@@ -197,12 +206,12 @@ describe("test mintastic market contract", function () {
         // buy should fail when demand exceeds supply
         await expectError(engine.execute(buyWithFlow(mintastic, buyer, asset.assetId!, "1000.0", 12)), invalidDemand);
 
-        expect(await engine.execute(getBalance(buyer))).toBe(1000.1)
+        expect(await engine.execute(getBalance(buyer))).toBe(1000.001)
         await engine.execute(buyWithFlow(mintastic, buyer, asset.assetId!, "1000.0", 2));
-        expect(await engine.execute(getBalance(buyer))).toBe(920.1)
+        expect(await engine.execute(getBalance(buyer))).toBe(920.001)
         await engine.execute(buyWithFlow(mintastic, buyer, asset.assetId!, "1000.0", 6));
         await engine.execute(buyWithFlow(mintastic, buyer, asset.assetId!, "1000.0", 2));
-        expect(await engine.execute(getBalance(buyer))).toBe(600.1)
+        expect(await engine.execute(getBalance(buyer))).toBe(600.001)
 
         // buy should fail when market item is sold out
         await expectError(engine.execute(buyWithFlow(mintastic, buyer, asset.assetId!, "1000.0", 2)), noItem);
@@ -254,7 +263,7 @@ describe("test mintastic market contract", function () {
         await engine.execute(mintFlow(buyer, "1000.0"))
         await engine.execute(buyWithFlow(bob, buyer, asset.assetId!, "10000.0", 1));
 
-        const events = await getEvents("FlowPaymentProvider", "FlowPaid", await getBlock());
+        const events = await getEvents("FlowPaymentProvider", "FlowPaid", await getBlockHeight());
         // service share
         expect(events[0].data.amount).toBe('1000.00000000');
         expect(events[0].data.recipient).toBe(mintastic);
@@ -268,7 +277,7 @@ describe("test mintastic market contract", function () {
         expect(await engine.execute(getBalance(mintastic))).toBe(mintasticBalance + 40)
         expect(await engine.execute(getBalance(alice))).toBe(aliceBalance + 40)
         expect(await engine.execute(getBalance(bob))).toBe(bobBalance + 320)
-        expect(await engine.execute(getBalance(buyer))).toBe(600.1)
+        expect(await engine.execute(getBalance(buyer))).toBe(600.001)
     });
     test("team creation share routing", async () => {
         const {engine, alice, bob, mintastic, carol, dan, blockHeight} = await getEnv()
@@ -316,7 +325,7 @@ describe("test mintastic market contract", function () {
         await engine.execute(mintFlow(buyer, "1000.0"))
         await engine.execute(buyWithFlow(bob, buyer, asset.assetId!, "10000.0", 1));
 
-        const flowEvents = await getEvents("FlowPaymentProvider", "FlowPaid", await getBlock());
+        const flowEvents = await getEvents("FlowPaymentProvider", "FlowPaid", await getBlockHeight());
         // service share
         expect(flowEvents[0].data.amount).toBe('1000.00000000');
         expect(flowEvents[0].data.recipient).toBe(mintastic);
@@ -336,7 +345,7 @@ describe("test mintastic market contract", function () {
         expect(await engine.execute(getBalance(bob))).toBe(bobBalance + 320)
         expect(await engine.execute(getBalance(carol))).toBe(carolBalance + 16)
         expect(await engine.execute(getBalance(dan))).toBe(danBalance + 8)
-        expect(await engine.execute(getBalance(buyer))).toBe(600.1)
+        expect(await engine.execute(getBalance(buyer))).toBe(600.001)
     });
 })
 describe("test mintastic market admin functions", function () {
@@ -386,7 +395,7 @@ describe("test mintastic market admin functions", function () {
         const {engine} = await getEnv()
         await engine.execute(getExchangeRate("flow"))
 
-        let blockHeight = (await getBlock()) + 1
+        let blockHeight = (await getBlockHeight()) + 1
         await engine.execute(setExchangeRate("flow", "10.0"))
         await engine.execute(setExchangeRate("flow", "20.0"))
         await engine.execute(setExchangeRate("flow", "30.0", 5))
@@ -394,7 +403,7 @@ describe("test mintastic market admin functions", function () {
         const events1 = await getEvents("FlowPaymentProvider", "ExchangeRateChanged", blockHeight);
         expect(events1.length).toBe(2);
 
-        blockHeight = (await getBlock()) + 1;
+        blockHeight = (await getBlockHeight()) + 1;
 
         await engine.execute(getExchangeRate("flow")) // skip block 1
         await engine.execute(getExchangeRate("flow")) // skip block 2
@@ -409,11 +418,111 @@ describe("test mintastic market admin functions", function () {
         expect(events3.length).toBe(1);
     });
 
+    test("read market item supply of lazy offering", async () => {
+        const {engine, alice, bob, mintastic} = await getEnv()
+        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
+
+        expect(await engine.execute(readItemSupply(mintastic, asset.assetId))).toBe(10);
+
+        await engine.execute(lockOffering(mintastic, asset.assetId, 2));
+        await engine.execute(buyWithFiat(mintastic, bob, asset.assetId!, "1000.0", 2, true));
+
+        expect(await engine.execute(readItemSupply(mintastic, asset.assetId))).toBe(8);
+    });
+    test("read market item supply of list offering", async () => {
+        const {engine, alice, bob} = await getEnv()
+        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+
+        await engine.execute(mint(alice, asset.assetId!, 10));
+        await engine.execute(createListOffer(alice, asset.assetId!, "1000.0"))
+
+        expect(await engine.execute(readItemSupply(alice, asset.assetId))).toBe(10);
+
+        await engine.execute(lockOffering(alice, asset.assetId, 2));
+        await engine.execute(buyWithFiat(alice, bob, asset.assetId!, "1000.0", 2, true));
+
+        expect(await engine.execute(readItemSupply(alice, asset.assetId))).toBe(8);
+    });
+
+    test("remove lazy market item", async () => {
+        const {engine, alice, mintastic} = await getEnv()
+        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
+
+        expect(await engine.execute(readStoreAssetId(mintastic))).toContain(asset.assetId);
+        await engine.execute(removeMarketItem(mintastic, asset.assetId));
+        expect(await engine.execute(readStoreAssetId(mintastic))).not.toContain(asset.assetId);
+    });
+
+    test("remove list market item", async () => {
+        const {engine, alice} = await getEnv()
+        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+
+        await engine.execute(mint(alice, asset.assetId!, 10));
+        await engine.execute(createListOffer(alice, asset.assetId!, "1000.0"))
+
+        expect(await engine.execute(readStoreAssetId(alice))).toContain(asset.assetId);
+        await engine.execute(removeMarketItem(alice, asset.assetId));
+        expect(await engine.execute(readStoreAssetId(alice))).not.toContain(asset.assetId);
+    });
+
+    test("cannot remove locked lazy market item", async () => {
+        const {engine, alice, mintastic} = await getEnv()
+        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"));
+        await engine.execute(lockOffering(mintastic, asset.assetId, 2));
+
+        expect(await engine.execute(readStoreAssetId(mintastic))).toContain(asset.assetId);
+        await expect(engine.execute(removeMarketItem(mintastic, asset.assetId))).rejects.toContain("locked items")
+    });
+
+    test("cannot remove locked list market item", async () => {
+        const {engine, alice} = await getEnv()
+        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(mint(alice, asset.assetId!, 10));
+
+        await engine.execute(createListOffer(alice, asset.assetId!, "1000.0"));
+        await engine.execute(lockOffering(alice, asset.assetId, 2));
+
+        expect(await engine.execute(readStoreAssetId(alice))).toContain(asset.assetId);
+        await expect(engine.execute(removeMarketItem(alice, asset.assetId))).rejects.toContain("locked items")
+    });
+
+    test("remove lazy market item after lock", async () => {
+        const {engine, alice, mintastic} = await getEnv()
+        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"));
+        await engine.execute(lockOffering(mintastic, asset.assetId, 2));
+        await engine.execute(lockMarketItem(mintastic, asset.assetId));
+
+        expect(await engine.execute(readStoreAssetId(mintastic))).toContain(asset.assetId);
+        await expect(engine.execute(removeMarketItem(mintastic, asset.assetId))).rejects.toContain("locked items")
+
+        await engine.execute(unlockOffering(mintastic, asset.assetId, 2));
+        await engine.execute(removeMarketItem(mintastic, asset.assetId))
+    });
+
+    test("lock market item", async () => {
+        const {engine, alice, bob, mintastic} = await getEnv()
+        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
+
+        await engine.execute(lockOffering(mintastic, asset.assetId, 2));
+        await engine.execute(lockMarketItem(mintastic, asset.assetId));
+        await expect(engine.execute(buyWithFiat(mintastic, bob, asset.assetId!, "1000.0", 2, true))).rejects.toContain("market item is locked");
+
+        await engine.execute(unlockMarketItem(mintastic, asset.assetId));
+        await engine.execute(buyWithFiat(mintastic, bob, asset.assetId!, "1000.0", 2, true));
+
+        expect(await engine.execute(readItemSupply(mintastic, asset.assetId))).toBe(8);
+    });
+
     test("change fiat exchange rate", async () => {
         const {engine} = await getEnv()
         await engine.execute(getExchangeRate("eur"))
 
-        let blockHeight = (await getBlock()) + 1
+        let blockHeight = (await getBlockHeight()) + 1
         await engine.execute(setExchangeRate("eur", "10.0"))
         await engine.execute(setExchangeRate("eur", "20.0"))
         await engine.execute(setExchangeRate("eur", "30.0", 5))
@@ -421,7 +530,7 @@ describe("test mintastic market admin functions", function () {
         const events1 = await getEvents("FiatPaymentProvider", "ExchangeRateChanged", blockHeight);
         expect(events1.length).toBe(2);
 
-        blockHeight = (await getBlock()) + 1;
+        blockHeight = (await getBlockHeight()) + 1;
 
         await engine.execute(getExchangeRate("eur")) // skip block 1
         await engine.execute(getExchangeRate("eur")) // skip block 2
@@ -436,4 +545,35 @@ describe("test mintastic market admin functions", function () {
         expect(events3.length).toBe(1);
     });
 
+    test("test hasCreatorCollection", async () => {
+        const {engine} = await getEnv();
+        const account = await getAccountAddress(uuid());
+        expect(await engine.execute(hasCreatorCollection(account))).toBeFalsy();
+
+        await engine.execute(setupCreator(account));
+        expect(await engine.execute(hasCreatorCollection(account))).toBeTruthy();
+
+        // await engine.execute(destroyCreator(account));
+        // expect(await engine.execute(hasCreatorCollection(account))).toBeFalsy();
+    });
+
+    test("test hasCollectorCollection", async () => {
+        const {engine} = await getEnv();
+        const account = await getAccountAddress(uuid());
+        expect(await engine.execute(hasCollectorCollection(account))).toBeFalsy();
+
+        await engine.execute(setupCollector(account));
+        expect(await engine.execute(hasCollectorCollection(account))).toBeTruthy();
+    });
+
+    test("create account", async () => {
+        const {engine, mintastic} = await getEnv();
+        await engine.execute(mintFlow(mintastic, "1000.0"))
+        const account = await engine.execute(createAccount());
+        console.log(account)
+
+        await engine.execute(setupCollector(account));
+        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), account), 10));
+        await engine.execute(mint(account, asset.assetId!, 10));
+    });
 })

@@ -1,7 +1,4 @@
-import {getEvents as getFlowEvents} from "@onflow/sdk-build-get-events";
-import {latestBlock as getLatestBlock} from "@onflow/sdk-latest-block";
 import * as fcl from "@onflow/fcl";
-import {send} from "@onflow/sdk-send";
 import getAccountAddress from "./get-account-address";
 
 export async function getEvents(contract: string, eventName: string, blockHeight: number = 0) {
@@ -12,6 +9,14 @@ export async function getEvents(contract: string, eventName: string, blockHeight
     const fromBlock = blockHeight;
     const toBlock = blockHeight + latestBlock.height;
 
-    const getEventsResult = await send([getFlowEvents(fullEventName, fromBlock, toBlock)]);
-    return await fcl.decode(getEventsResult);
+    const result = await fcl.send([
+        fcl.getEventsAtBlockHeightRange(fullEventName, fromBlock, toBlock),
+    ]);
+    return await fcl.decode(result);
+}
+
+export async function getLatestBlock() {
+    const block = await fcl.send([fcl.getBlock(true)]);
+    const decoded = await fcl.decode(block);
+    return decoded;
 }

@@ -5,10 +5,10 @@ import MintasticMarket from 0xMintasticMarket
 import MintasticCredit from 0xMintasticCredit
 
 /*
- * This transaction is used to lock a nft offering of a market item.
+ * This transaction is used to lock a nft market item.
  * The transaction is invoked by mintastic.
  */
-transaction(owner: Address, assetId: String, amount: UInt16) {
+transaction(owner: Address, assetId: String) {
     let marketToken: &MintasticMarket.MarketToken
     let marketStore: &{MintasticMarket.MarketStoreAdmin}
 
@@ -23,6 +23,6 @@ transaction(owner: Address, assetId: String, amount: UInt16) {
     }
 
     execute {
-        self.marketStore.lockOffering(token: self.marketToken, assetId: assetId, amount: amount)
+        self.marketStore.lock(token: self.marketToken, assetId: assetId)
     }
 }

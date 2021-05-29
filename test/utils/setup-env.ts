@@ -1,12 +1,17 @@
 import {config} from "@onflow/config"
 import getAccountAddress from "./get-account-address";
-import {AddressMap, NodeCadenceEngine, setupCollector} from "../../src";
+import {
+    AddressMap,
+    NodeCadenceEngine,
+    setBlockLimit,
+    setExchangeRate,
+    setMarketFee,
+    setupCollector,
+    setupCreator
+} from "../../src";
 import deployContract from "./deploy-contract";
-import {setupCreator} from "../../src/transactions/account/setup-creator";
-import {setBlockLimit} from "../../src/transactions/market/set-block-limit";
-import {setExchangeRate} from "../../src/transactions/credit/set-exchange-rate";
-import {setMarketFee} from "../../src/transactions/market/set-market-fee";
-import {latestBlock as getLatestBlock} from "@onflow/sdk-latest-block";
+import * as fcl from "@onflow/fcl";
+import {mintFlow} from "../../src/transactions/flow/mint-flow";
 
 export async function setupEnv(): Promise<TestEnv> {
 
@@ -33,6 +38,10 @@ export async function setupEnv(): Promise<TestEnv> {
         .put("0xPaymentProviderProxy", mintastic)
 
     const engine = new NodeCadenceEngine(mintastic, 0, await AddressMap.fromConfig());
+
+    await engine.execute(mintFlow(mintastic, "1000.0"))
+    await engine.execute(mintFlow(alice, "1000.0"))
+    await engine.execute(mintFlow(bob, "1000.0"))
 
     const addressMap = {
         "NonFungibleToken": mintastic,
@@ -63,7 +72,7 @@ export async function setupEnv(): Promise<TestEnv> {
     await engine.execute(setExchangeRate("flow", "25.0"));
     await engine.execute(setMarketFee("10000.0", "0.1"))
 
-    const blockHeight = await getLatestBlock().height
+    const blockHeight = await getBlockHeight();
 
     return {engine, mintastic, alice, bob, carol, dan, blockHeight}
 }
@@ -75,13 +84,15 @@ export async function getEnv(): Promise<TestEnv> {
     const carol = await getAccountAddress("Carol");
     const dan = await getAccountAddress("Dan");
     const engine = new NodeCadenceEngine(mintastic, 0, await AddressMap.fromConfig());
-    const blockHeight = (await getLatestBlock()).height
+    const blockHeight = await getBlockHeight();
 
     return {engine, mintastic, alice, bob, carol, dan, blockHeight}
 }
 
-export async function getBlock() {
-    return getLatestBlock().then(e => e.height)
+export async function getBlockHeight() {
+    const block = await fcl.send([fcl.getBlock(true)]);
+    const decoded = await fcl.decode(block);
+    return decoded.height;
 }
 
 export interface TestEnv {

@@ -12,6 +12,10 @@ This contract defines the structure and behaviour of mintastic NFT assets. By us
 can be registered in the AssetRegistry so that NFTs, belonging to that asset can be minted. Assets and NFT tokens can
 also be locked by this contract.
 
+flow emulator start
+flow project deploy --network=testnet
+flow keys generate
+
 ## Events
 ### ContractInitialized
     // This event is emitted after the deployment of the MintasticNFT contract, 

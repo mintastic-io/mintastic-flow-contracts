@@ -1,17 +1,6 @@
 import MintasticMarket from 0xMintasticMarket
 
 pub fun main(address: Address): Bool {
-    let Public = MintasticMarket.MintasticMarketStorePublicPath
-
-    let collectionRef = getAccount(address)
-        .getCapability(Public)
-        .borrow<&{MintasticMarket.PublicMarketStore}>()
-        ?? panic("Could not borrow capability from public collection")
-
-    getAccount(address)
-        .getCapability(Public)
-        .borrow<&{MintasticMarket.PublicMarketStore}>()
-        ?? panic("Could not borrow capability from public collection")
-
-    return true
+    let cap = getAccount(address).getCapability(MintasticMarket.MintasticMarketStorePublicPath)
+    return cap.borrow<&{MintasticMarket.PublicMarketStore}>() != nil
 }

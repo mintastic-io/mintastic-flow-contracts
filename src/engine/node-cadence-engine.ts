@@ -39,30 +39,23 @@ export class NodeCadenceEngine implements CadenceEngine{
     public getAuth(address?: string, keyId?: number) {
         return async (account: any = {}) => {
             const user = await this.getAccount(address || this.signer);
+            const key = user.keys[keyId || 0];
 
-            let sequenceNum;
-            if (account.role.proposer) {
-                sequenceNum = await this.getSeqNum(address || this.signer, keyId || this.keyId);
-                if (sequenceNum === null) {
-                    throw new Error("Could not figure out sequence number for authorization with role proposer")
-                }
-            }
-            const signingFunction = async (data) => {
-                return {
-                    addr: user.address,
-                    keyId: this.keyId,
-                    signature: this.signWithKey(await config().get("PRIVATE_KEY"), data.message),
-                };
-            };
+            const sign = this.signWithKey;
+            const pk = await config().get("PRIVATE_KEY");
+
             return {
                 ...account,
-                addr: user.address,
-                keyId: this.keyId,
-                sequenceNum,
-                signature: account.signature || null,
-                signingFunction,
-                resolve: null,
-                roles: account.roles,
+                tempId: `${user.address}-${key.index}`,
+                addr: fcl.sansPrefix(user.address),
+                keyId: Number(key.index),
+                signingFunction: (signable) => {
+                    return {
+                        addr: fcl.withPrefix(user.address),
+                        keyId: Number(key.index),
+                        signature: sign(pk, signable.message),
+                    }
+                }
             };
         };
     }
@@ -88,11 +81,5 @@ export class NodeCadenceEngine implements CadenceEngine{
         const {account} = await fcl.send([fcl.getAccount(addr)]);
         return account;
     }
-
-    private async getSeqNum(addr, keyId = 0) {
-        const response = await fcl.send([fcl.getAccount(addr.replace(/^0x/, ""))]);
-        const account = await fcl.decode(response);
-        return account.keys[keyId].sequenceNumber;
-    };
 
 }

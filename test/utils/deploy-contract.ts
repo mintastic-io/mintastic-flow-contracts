@@ -1,5 +1,4 @@
-import {deployContractByName} from "flow-js-testing/dist/utils/deploy-code";
-import {getContractAddress} from "flow-js-testing/dist/utils/contract";
+import {deployContractByName, getContractAddress} from "flow-js-testing";
 
 export default async function deployContract(name: string, to: string, addressMap: {} = {}) {
     if (await getContractAddress(name)) {
