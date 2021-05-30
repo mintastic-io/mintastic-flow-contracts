@@ -238,10 +238,11 @@ pub contract MintasticMarket {
         }
 
         access(self) fun routeRoyaltyShare(payment: @{MintasticCredit.Payment}) {
-            let addresses = MintasticNFT.assets[self.assetId]!.addresses
+            let creators = MintasticNFT.assets[self.assetId]!.creators
             let balance = payment.vault.balance
-            for address in addresses.keys {
-                let addressPayment <- payment.split(amount: balance * addresses[address]!)
+            for creatorId in creators.keys {
+                let address = MintasticNFT.creators[creatorId] ?? panic("creatorId ".concat(creatorId).concat(" is unknown"))
+                let addressPayment <- payment.split(amount: balance * creators[creatorId]!)
                 self.routePayment(payment: <- addressPayment, recipient: address)
             }
             assert(payment.vault.balance == 0.0, message: "invalid royalty payments")

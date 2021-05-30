@@ -8,11 +8,12 @@ import NonFungibleToken from 0xNonFungibleToken
  */
 pub contract MintasticNFT: NonFungibleToken {
 
-    pub let MintasticNFTPublicPath: PublicPath
-    pub let MintasticNFTPrivatePath: PrivatePath
-    pub let MintasticNFTStoragePath: StoragePath
-    pub let AssetRegistryStoragePath: StoragePath
-    pub let MinterFactoryStoragePath: StoragePath
+    pub let MintasticNFTPublicPath:     PublicPath
+    pub let MintasticNFTPrivatePath:    PrivatePath
+    pub let MintasticNFTStoragePath:    StoragePath
+    pub let AssetRegistryStoragePath:   StoragePath
+    pub let MinterFactoryStoragePath:   StoragePath
+    pub let CreatorRegistryStoragePath: StoragePath
 
     pub event ContractInitialized()
     pub event Withdraw(id: UInt64, from: Address?)
@@ -23,6 +24,7 @@ pub contract MintasticNFT: NonFungibleToken {
     pub var totalSupply:  UInt64
     pub let assets:       {String: Asset}
     pub let lockedSeries: {String: [UInt16]}
+    pub let creators:     {String: Address}
 
     // Common interface for the NFT data.
     pub resource interface TokenDataAware {
@@ -77,10 +79,12 @@ pub contract MintasticNFT: NonFungibleToken {
     pub resource AssetRegistry {
 
       pub fun store(asset: Asset) {
-          pre {
-            MintasticNFT.assets[asset.assetId] == nil: "asset id already registered"
-            !(MintasticNFT.lockedSeries[asset.creatorId]??[]).contains(asset.series): "series is locked"
+          pre { MintasticNFT.assets[asset.assetId] == nil: "asset id already registered" }
+
+          for creatorId in asset.creators.keys {
+            assert(!(MintasticNFT.lockedSeries[creatorId]??[]).contains(asset.series), message: "series is locked")
           }
+
           MintasticNFT.assets[asset.assetId] = asset
       }
 
@@ -101,6 +105,15 @@ pub contract MintasticNFT: NonFungibleToken {
     }
 
     /**
+     * This resource is used to register a creator in order to map an address to them.
+     */
+    pub resource CreatorRegistry {
+        pub fun store(creatorId: String, address: Address) {
+            MintasticNFT.creators[creatorId] = address
+        }
+    }
+
+    /**
      * This structure defines all the information an asset has. The content
      * attribute is a IPFS link to a data structure which contains all
      * the data the NFT asset is about.
@@ -112,8 +125,7 @@ pub contract MintasticNFT: NonFungibleToken {
      */
     pub struct Asset {
         pub let assetId: String
-        pub let creatorId: String
-        pub let addresses: {Address:UFix64}
+        pub let creators: {String:UFix64}
         pub let content: String
         pub let royalty: UFix64
         pub let series: UInt16
@@ -128,26 +140,26 @@ pub contract MintasticNFT: NonFungibleToken {
             self.supply.setCur(supply: supply)
         }
 
-        init(creatorId: String, assetId: String, content: String, addresses: {Address:UFix64}, royalty: UFix64, series: UInt16, type: UInt16, maxSupply: UInt16) {
+        init(creators: {String:UFix64}, assetId: String, content: String, royalty: UFix64, series: UInt16, type: UInt16, maxSupply: UInt16) {
             pre {
-                royalty <= 0.2: "royalty must be lower than or equal to 0.2"
-                addresses.length > 0: "no address found"
+                royalty <= 1.0: "royalty must be lower than or equal to 1.0"
+                royalty >= 0.0: "royalty must be greater than or equal to 0.0"
+                creators.length > 0: "no address found"
             }
 
             var sum:UFix64 = 0.0
-            for value in addresses.values {
+            for value in creators.values {
                 sum = sum + value
             }
-            assert(sum == 1.0, message: "invalid address shares")
+            assert(sum == 1.0, message: "invalid creator shares")
 
+            self.creators = creators
             self.assetId = assetId
-            self.creatorId = creatorId
-            self.addresses = addresses
             self.content = content
             self.royalty = royalty
             self.series = series
-            self.type = type
             self.supply = Supply(max: maxSupply)
+            self.type = type
         }
     }
 
@@ -341,13 +353,16 @@ pub contract MintasticNFT: NonFungibleToken {
         self.totalSupply  = 0
         self.lockedSeries = {}
         self.assets       = {}
+        self.creators     = {}
 
-        self.MintasticNFTPublicPath   = /public/MintasticNFTs
-        self.MintasticNFTPrivatePath  = /private/MintasticNFTs
-        self.MintasticNFTStoragePath  = /storage/MintasticNFTs
-        self.AssetRegistryStoragePath = /storage/AssetRegistry
-        self.MinterFactoryStoragePath = /storage/MinterFactory
+        self.MintasticNFTPublicPath     = /public/MintasticNFTs
+        self.MintasticNFTPrivatePath    = /private/MintasticNFTs
+        self.MintasticNFTStoragePath    = /storage/MintasticNFTs
+        self.AssetRegistryStoragePath   = /storage/AssetRegistry
+        self.MinterFactoryStoragePath   = /storage/MinterFactory
+        self.CreatorRegistryStoragePath = /storage/CreatorRegistry
 
+        self.account.save(<- create CreatorRegistry(), to: self.CreatorRegistryStoragePath)
         self.account.save(<- create AssetRegistry(), to: self.AssetRegistryStoragePath)
         self.account.save(<- create MinterFactory(), to: self.MinterFactoryStoragePath)
         self.account.save(<- create Collection(),    to: self.MintasticNFTStoragePath)

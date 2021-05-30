@@ -4,7 +4,7 @@ import MintasticNFT from 0xMintasticNFT
  * This transaction is used to create an asset in order to mint tokens.
  * After the creation the asset is ready to be minted or to be purchased in a lazy manner.
  */
-transaction(creatorId: String, assetId: String, content: String, addresses: {Address:UFix64}, royalty: UFix64, series: UInt16, type: UInt16, maxSupply: UInt16) {
+transaction(creators: {String:UFix64}, assetId: String, content: String, royalty: UFix64, series: UInt16, type: UInt16, maxSupply: UInt16) {
     let assetRegistry: &MintasticNFT.AssetRegistry
 
     prepare(mintastic: AuthAccount) {
@@ -13,7 +13,7 @@ transaction(creatorId: String, assetId: String, content: String, addresses: {Add
     }
 
     execute {
-        let asset = MintasticNFT.Asset(creatorId: creatorId, assetId: assetId, content: content, addresses: addresses, royalty: royalty, series: series, type: type, maxSupply: maxSupply)
+        let asset = MintasticNFT.Asset(creators: creators, assetId: assetId, content: content, royalty: royalty, series: series, type: type, maxSupply: maxSupply)
         self.assetRegistry.store(asset: asset)
     }
 }

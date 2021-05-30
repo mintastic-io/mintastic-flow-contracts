@@ -26,15 +26,14 @@ export function createAsset(asset: Asset, maxSupply: number): (CadenceEngine) =>
             fcl.authorizations([auth]),
             fcl.limit(100),
             fcl.args([
-                fcl.arg(asset.creatorId, t.String),
+                fcl.arg(
+                    asset.creators.map(e => {
+                        return {key: e.creatorId, value: e.share}
+                    }),
+                    t.Dictionary({key: t.String, value: t.UFix64})
+                ),
                 fcl.arg(asset.assetId, t.String),
                 fcl.arg(asset.content, t.String),
-                fcl.arg(
-                    asset.addresses.map(e => {
-                        return {key: e.address, value: e.share}
-                    }),
-                    t.Dictionary({key: t.Address, value: t.UFix64})
-                ),
                 fcl.arg(asset.royalty, t.UFix64),
                 fcl.arg(asset.series || 0, t.UInt16),
                 fcl.arg(asset.type, t.UInt16),
@@ -49,8 +48,7 @@ export function createAsset(asset: Asset, maxSupply: number): (CadenceEngine) =>
 
 export interface Asset {
     assetId: string
-    creatorId: string
-    addresses: { address: string, share: string }[]
+    creators: { creatorId: string, share: string }[]
     content: string
     royalty: string
     series: number

@@ -5,7 +5,6 @@ import {
     buyWithFiat,
     buyWithFlow,
     cancelBid,
-    createAccount,
     createAsset,
     createLazyOffer,
     createListOffer,
@@ -44,6 +43,9 @@ import {readStoreAssetId} from "../src/scripts/market/read-store-asset-ids";
 import {lockMarketItem} from "../src/transactions/market/lock-market-item";
 import {unlockMarketItem} from "../src/transactions/market/unlock-market-item";
 import {hasCreatorCollection} from "../src/scripts/account/has-creator-collection";
+import {storeCreator} from "../src/transactions/nft/store-creator";
+
+const getUuid = require('uuid-by-string')
 
 describe("test mintastic market contract", function () {
     beforeAll(async () => {
@@ -54,7 +56,9 @@ describe("test mintastic market contract", function () {
 
     test("buy NFT (off-chain, list offer)", async () => {
         const {engine, alice, bob} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+
+        await engine.execute(storeCreator(getUuid(alice), alice))
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
 
         expect(await engine.execute(checkSupply(asset.assetId, 10))).toBeTruthy();
 
@@ -79,7 +83,8 @@ describe("test mintastic market contract", function () {
     });
     test("buy NFT (off-chain, lazy offer)", async () => {
         const {engine, mintastic, alice, bob} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
 
         // create a lazy offering
         await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
@@ -98,7 +103,8 @@ describe("test mintastic market contract", function () {
     });
     test("accept bid NFT (off-chain, list offer)", async () => {
         const {engine, alice, bob} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         await engine.execute(mint(alice, asset.assetId!, 1));
 
         const ids = await engine.execute(readTokenIds(alice));
@@ -116,7 +122,8 @@ describe("test mintastic market contract", function () {
     });
     test("accept bid NFT (off-chain, lazy offer)", async () => {
         const {engine, mintastic, alice, bob} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
 
         await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
         await engine.execute(bidWithFiat(mintastic, asset.assetId!, "500.0", 1));
@@ -132,7 +139,8 @@ describe("test mintastic market contract", function () {
     });
     test("reject bid NFT (off-chain, lazy offer)", async () => {
         const {engine, mintastic, alice, bob} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
 
         await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
         await engine.execute(bidWithFiat(mintastic, asset.assetId!, "500.0", 1));
@@ -146,7 +154,8 @@ describe("test mintastic market contract", function () {
     });
     test("abort  bid NFT (off-chain, lazy offer)", async () => {
         const {engine, mintastic, alice, bob} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
 
         await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
         await engine.execute(bidWithFiat(mintastic, asset.assetId!, "500.0", 1));
@@ -167,7 +176,8 @@ describe("test mintastic market contract", function () {
         await engine.execute(mintFlow(buyer, "1000.0"))
         await engine.execute(setExchangeRate("flow", "25.0"))
 
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
 
         // create a list offering
         await engine.execute(mint(alice, asset.assetId!, 10));
@@ -198,7 +208,8 @@ describe("test mintastic market contract", function () {
         await engine.execute(mintFlow(buyer, "1000.0"))
         await engine.execute(setExchangeRate("flow", "25.0"))
 
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
 
         // buy should fail when balance is too low
@@ -226,7 +237,8 @@ describe("test mintastic market contract", function () {
         await engine.execute(mintFlow(buyer, "1000.0"))
         await engine.execute(setExchangeRate("flow", "25.0"))
 
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         await engine.execute(mint(alice, asset.assetId!, 1));
 
         const ids = await engine.execute(readTokenIds(alice));
@@ -244,7 +256,8 @@ describe("test mintastic market contract", function () {
         const {engine, alice, bob, mintastic, blockHeight} = await getEnv()
 
         // create an asset and insert it to market
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         await engine.execute(mint(alice, asset.assetId!, 1));
         await engine.execute(createListOffer(alice, asset.assetId!, "1000.0"))
 
@@ -282,11 +295,18 @@ describe("test mintastic market contract", function () {
     test("team creation share routing", async () => {
         const {engine, alice, bob, mintastic, carol, dan, blockHeight} = await getEnv()
 
-        const team = [{address: alice, share: "0.4"}, {address: carol, share: "0.4"}, {address: dan, share: "0.2"}]
+        // TODO: register team
+        await engine.execute(storeCreator(getUuid(alice), alice))
+        await engine.execute(storeCreator(getUuid(carol), carol))
+        await engine.execute(storeCreator(getUuid(dan), dan))
+
+        const team = [{creatorId: getUuid(alice), share: "0.4"}, {creatorId: getUuid(carol), share: "0.4"}, {creatorId: getUuid(dan), share: "0.2"}]
+        // FIXME
+        const recipients = [{address: alice, share: "0.4"}, {address: carol, share: "0.4"}, {address: dan, share: "0.2"}]
         // create an asset and insert it to market
-        const asset = await engine.execute(createAsset(newTeamAsset(uuid(), uuid(), team), 10));
+        const asset = await engine.execute(createAsset(newTeamAsset(uuid(), team), 10));
         await engine.execute(mint(alice, asset.assetId!, 1));
-        await engine.execute(createListOffer(alice, asset.assetId!, "1000.0", team))
+        await engine.execute(createListOffer(alice, asset.assetId!, "1000.0", recipients))
 
         // sell the asset and insert it to market
         await engine.execute(buyWithFiat(alice, bob, asset.assetId!, "1000.0", 1));
@@ -357,7 +377,8 @@ describe("test mintastic market admin functions", function () {
 
     test("change price of a market item", async () => {
         const {engine, alice} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
 
         // create a list offering
         await engine.execute(mint(alice, asset.assetId!, 10));
@@ -369,7 +390,8 @@ describe("test mintastic market admin functions", function () {
     });
     test("cannot change price when market item is locked", async () => {
         const {engine, alice} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
 
         // create a list offering
         await engine.execute(mint(alice, asset.assetId!, 10));
@@ -382,7 +404,8 @@ describe("test mintastic market admin functions", function () {
 
     test("get market item recipients", async () => {
         const {engine, alice} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
 
         // create a list offering
         await engine.execute(mint(alice, asset.assetId!, 10));
@@ -420,7 +443,9 @@ describe("test mintastic market admin functions", function () {
 
     test("read market item supply of lazy offering", async () => {
         const {engine, alice, bob, mintastic} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
 
         expect(await engine.execute(readItemSupply(mintastic, asset.assetId))).toBe(10);
@@ -432,7 +457,8 @@ describe("test mintastic market admin functions", function () {
     });
     test("read market item supply of list offering", async () => {
         const {engine, alice, bob} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
 
         await engine.execute(mint(alice, asset.assetId!, 10));
         await engine.execute(createListOffer(alice, asset.assetId!, "1000.0"))
@@ -447,7 +473,9 @@ describe("test mintastic market admin functions", function () {
 
     test("remove lazy market item", async () => {
         const {engine, alice, mintastic} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
 
         expect(await engine.execute(readStoreAssetId(mintastic))).toContain(asset.assetId);
@@ -457,7 +485,9 @@ describe("test mintastic market admin functions", function () {
 
     test("remove list market item", async () => {
         const {engine, alice} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
 
         await engine.execute(mint(alice, asset.assetId!, 10));
         await engine.execute(createListOffer(alice, asset.assetId!, "1000.0"))
@@ -469,7 +499,9 @@ describe("test mintastic market admin functions", function () {
 
     test("cannot remove locked lazy market item", async () => {
         const {engine, alice, mintastic} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"));
         await engine.execute(lockOffering(mintastic, asset.assetId, 2));
 
@@ -479,7 +511,9 @@ describe("test mintastic market admin functions", function () {
 
     test("cannot remove locked list market item", async () => {
         const {engine, alice} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         await engine.execute(mint(alice, asset.assetId!, 10));
 
         await engine.execute(createListOffer(alice, asset.assetId!, "1000.0"));
@@ -491,7 +525,9 @@ describe("test mintastic market admin functions", function () {
 
     test("remove lazy market item after lock", async () => {
         const {engine, alice, mintastic} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"));
         await engine.execute(lockOffering(mintastic, asset.assetId, 2));
         await engine.execute(lockMarketItem(mintastic, asset.assetId));
@@ -505,7 +541,9 @@ describe("test mintastic market admin functions", function () {
 
     test("lock market item", async () => {
         const {engine, alice, bob, mintastic} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         await engine.execute(createLazyOffer(alice, asset.assetId!, "1000.0"))
 
         await engine.execute(lockOffering(mintastic, asset.assetId, 2));
@@ -566,14 +604,5 @@ describe("test mintastic market admin functions", function () {
         expect(await engine.execute(hasCollectorCollection(account))).toBeTruthy();
     });
 
-    test("create account", async () => {
-        const {engine, mintastic} = await getEnv();
-        await engine.execute(mintFlow(mintastic, "1000.0"))
-        const account = await engine.execute(createAccount());
-        console.log(account)
 
-        await engine.execute(setupCollector(account));
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), account), 10));
-        await engine.execute(mint(account, asset.assetId!, 10));
-    });
 })

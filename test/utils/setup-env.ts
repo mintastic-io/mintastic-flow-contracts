@@ -40,8 +40,8 @@ export async function setupEnv(): Promise<TestEnv> {
     const engine = new NodeCadenceEngine(mintastic, 0, await AddressMap.fromConfig());
 
     await engine.execute(mintFlow(mintastic, "1000.0"))
-    await engine.execute(mintFlow(alice, "1000.0"))
-    await engine.execute(mintFlow(bob, "1000.0"))
+    // await engine.execute(mintFlow(alice, "1000.0"))
+    // await engine.execute(mintFlow(bob, "1000.0"))
 
     const addressMap = {
         "NonFungibleToken": mintastic,
@@ -73,6 +73,7 @@ export async function setupEnv(): Promise<TestEnv> {
     await engine.execute(setMarketFee("10000.0", "0.1"))
 
     const blockHeight = await getBlockHeight();
+    await engine.execute(setExchangeRate("eur", "1.0"))
 
     return {engine, mintastic, alice, bob, carol, dan, blockHeight}
 }

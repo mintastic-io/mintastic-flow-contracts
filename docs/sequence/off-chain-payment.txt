@@ -1,0 +1,25 @@
+off-chain payment
+
+fontawesome5solid f007 Alice #00ffff
+fontawesome5solid f6d1 MintasticMarket #00ffff
+fontawesome5solid f007 Mintastic #00ffff
+fontawesome5solid f6d1 MintasticCredit #00ffff
+fontawesome5solid f007 Bob #00ffff
+
+Bob-#violet>Mintastic:init fiat money payment (stripe)
+MintasticMarket<#cyan-Mintastic: lock offering
+Bob<#cyan--Mintastic:offering locked
+Bob-#violet>Mintastic:transfer fiat money (stripe)
+
+MintasticCredit<#cyan-Mintastic:createCredits(...)
+activate MintasticCredit
+MintasticCredit--#cyan>Mintastic:credits
+
+MintasticCredit<#cyan-Mintastic:exchange(...)
+MintasticCredit--#cyan>Mintastic:payment
+
+MintasticMarket<#cyan-Mintastic: unlock and buy
+MintasticMarket--#cyan>MintasticCredit: route(...) (destroy credits)
+deactivate MintasticCredit
+Alice<#violet-Mintastic:transfer fiat money
+Alice--#cyan>Bob:NFT
