@@ -83,6 +83,7 @@ pub contract MintasticNFT: NonFungibleToken {
 
           for creatorId in asset.creators.keys {
             assert(!(MintasticNFT.lockedSeries[creatorId]??[]).contains(asset.series), message: "series is locked")
+            assert(MintasticNFT.creators[creatorId] != nil, message: "unknown creatorId: ".concat(creatorId))
           }
 
           MintasticNFT.assets[asset.assetId] = asset

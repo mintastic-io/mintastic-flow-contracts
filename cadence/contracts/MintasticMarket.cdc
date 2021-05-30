@@ -241,7 +241,7 @@ pub contract MintasticMarket {
             let creators = MintasticNFT.assets[self.assetId]!.creators
             let balance = payment.vault.balance
             for creatorId in creators.keys {
-                let address = MintasticNFT.creators[creatorId] ?? panic("creatorId ".concat(creatorId).concat(" is unknown"))
+                let address = MintasticNFT.creators[creatorId] ?? panic("unknown creatorId: ".concat(creatorId))
                 let addressPayment <- payment.split(amount: balance * creators[creatorId]!)
                 self.routePayment(payment: <- addressPayment, recipient: address)
             }
