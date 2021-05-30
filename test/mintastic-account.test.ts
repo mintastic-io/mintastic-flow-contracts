@@ -58,22 +58,4 @@ describe("mintastic contract test suite", function () {
         await engine.execute(mint(account, asset.assetId!, 10));
     });
 
-    test("create many accounts", async () => {
-        const {engine} = await getEnv();
-
-        let account = ""
-        for (let i = 0; i <= 1000; i++) {
-            account = await engine.execute(createAccount());
-            if (i % 10 == 0) console.log(i)
-        }
-
-        expect(account).not.toBeUndefined()
-
-        await engine.execute(setupCollector(account));
-        await engine.execute(storeCreator(getUuid(account), account))
-
-        const asset = await engine.execute(createAsset(newAsset(getUuid(account), uuid()), 10));
-        await engine.execute(mint(account, asset.assetId!, 10));
-    });
-
 })

@@ -16,8 +16,9 @@ import {readNextSeries} from "../src/scripts/nft/read-next-series";
 import {getEnv, setupEnv} from "./utils/setup-env";
 import {readSupply} from "../src/scripts/nft/read-supply";
 import {readOwnedAssets} from "../src/scripts/nft/read-owned-assets";
+import {storeCreator} from "../src/transactions/nft/store-creator";
 
-const CREATOR_ID = uuid();
+const getUuid = require('uuid-by-string')
 
 describe("mintastic contract test suite", function () {
     beforeAll(async () => {
@@ -33,7 +34,8 @@ describe("mintastic contract test suite", function () {
         await engine.execute(setupCollector(bob));
         expect(await engine.execute(hasCollectorCollection(bob))).toBeTruthy();
 
-        const asset = await engine.execute(createAsset(newAsset(uuid(), uuid(), alice), 10));
+        await engine.execute(storeCreator(getUuid(alice), alice))
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         expect((await engine.execute(readAllAssetIds())).length > 0).toBeTruthy();
 
         await engine.execute(mint(bob, asset.assetId!, 1));
@@ -43,34 +45,35 @@ describe("mintastic contract test suite", function () {
 
     test("cannot lock default series", async () => {
         const {engine} = await getEnv()
-        await expect(engine.execute(lockSeries(CREATOR_ID, 0))).rejects.toContain("cannot lock default series");
+        await expect(engine.execute(lockSeries(uuid(), 0))).rejects.toContain("cannot lock default series");
     });
 
     test("test series locking", async () => {
         const {engine, alice} = await getEnv()
-        const series = await (engine.execute(readNextSeries(CREATOR_ID)))
+        const series = await (engine.execute(readNextSeries(getUuid(alice))))
 
-        await engine.execute(createAsset(newAsset(CREATOR_ID, uuid(), alice, series), 10));
-        await engine.execute(lockSeries(CREATOR_ID, series));
-        await expect(engine.execute(createAsset(newAsset(CREATOR_ID, uuid(), alice, series), 10))).rejects.toContain("series is locked")
+        await engine.execute(storeCreator(getUuid(alice), alice))
+        await engine.execute(createAsset(newAsset(getUuid(alice), uuid(), series), 10));
+        await engine.execute(lockSeries(getUuid(alice), series));
+        await expect(engine.execute(createAsset(newAsset(getUuid(alice), uuid(), series), 10))).rejects.toContain("series is locked")
     });
 
     test("cannot create asset twice", async () => {
         const {engine, alice} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(CREATOR_ID, uuid(), alice), 10));
-        await expect(engine.execute(createAsset(newAsset(CREATOR_ID, asset.assetId!, alice), 10))).rejects.toContain("asset id already registered");
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
+        await expect(engine.execute(createAsset(newAsset(getUuid(alice), asset.assetId!), 10))).rejects.toContain("asset id already registered");
     });
 
     test("cannot increase max supply", async () => {
         const {engine, alice} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(CREATOR_ID, uuid(), alice), 10));
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         await engine.execute(setMaxSupply(asset.assetId!, 5));
         await expect(engine.execute(setMaxSupply(asset.assetId!, 7))).rejects.toContain("supply must be lower than current max supply");
     });
 
     test("cannot set max supply lower than cur supply", async () => {
         const {engine, alice, bob} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(CREATOR_ID, uuid(), alice), 10));
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         await engine.execute(mint(bob, asset.assetId!, 5));
         await expect(engine.execute(setMaxSupply(asset.assetId!, 3))).rejects.toContain("supply must be greater than current supply");
     });
@@ -82,18 +85,18 @@ describe("mintastic contract test suite", function () {
 
     test("cannot mint more then max supply", async () => {
         const {engine, alice, bob} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(CREATOR_ID, uuid(), alice), 10));
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         await engine.execute(mint(bob, asset.assetId!, 7));
         await expect(engine.execute(mint(bob, asset.assetId!, 7))).rejects.toContain("max supply limit reached");
     });
 
     test("read assets", async () => {
         const {engine, alice} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(CREATOR_ID, uuid(), alice), 10));
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         await engine.execute(mint(alice, asset.assetId!, 2));
         await engine.execute(mint(alice, asset.assetId!, 5));
 
-        const asset2 = await engine.execute(createAsset(newAsset(CREATOR_ID, uuid(), alice), 10));
+        const asset2 = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         await engine.execute(mint(alice, asset2.assetId!, 2));
         await engine.execute(mint(alice, asset2.assetId!, 5));
 
@@ -102,7 +105,7 @@ describe("mintastic contract test suite", function () {
 
     test("read supply", async () => {
         const {engine, alice} = await getEnv()
-        const asset = await engine.execute(createAsset(newAsset(CREATOR_ID, uuid(), alice), 10));
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
 
         const supplies1 = await engine.execute(readSupply(asset.assetId))
         expect(supplies1.maxSupply).toBe(10);
