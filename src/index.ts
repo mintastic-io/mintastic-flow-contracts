@@ -27,3 +27,4 @@ export {setMarketFee} from "./transactions/market/set-market-fee";
 export {lockSeries} from "./transactions/nft/lock-series";
 export {setMaxSupply} from "./transactions/nft/set-max-supply";
 export {transfer} from "./transactions/nft/transfer";
+export {createAccount} from "./transactions/account/create-account";
