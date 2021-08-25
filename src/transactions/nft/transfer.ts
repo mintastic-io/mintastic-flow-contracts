@@ -5,11 +5,12 @@ import {CadenceEngine} from "../../engine/cadence-engine";
 /**
  * This transaction is used to transfer a NFT from the mintastic collection to an other address.
  *
+ * @param owner the nft owner address
  * @param buyer the recipient address
  * @param assetId the asset id of the token to transfer
  * @param amount the amount of tokens to transfer
  */
-export function transfer(buyer: string, assetId: string, amount: number): (CadenceEngine) => Promise<void> {
+export function transfer(owner: string, buyer: string, assetId: string, amount: number): (CadenceEngine) => Promise<void> {
     if (buyer.length == 0)
         throw Error("invalid buyer address found");
     if (assetId.length == 0)
@@ -18,7 +19,7 @@ export function transfer(buyer: string, assetId: string, amount: number): (Caden
         throw Error("amount must be greater than or equal zero");
 
     return (engine: CadenceEngine) => {
-        const auth = engine.getAuth();
+        const auth = engine.getAuth(owner);
         const code = engine.getCode("transactions/nft/transfer");
 
         return fcl.send([

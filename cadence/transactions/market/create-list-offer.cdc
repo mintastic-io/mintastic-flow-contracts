@@ -1,6 +1,5 @@
 import NonFungibleToken from 0xNonFungibleToken
 import MintasticNFT     from 0xMintasticNFT
-import MintasticCredit  from 0xMintasticCredit
 import MintasticMarket  from 0xMintasticMarket
 
 /*
@@ -8,7 +7,7 @@ import MintasticMarket  from 0xMintasticMarket
  * A list offering uses a list of token ids which are already minted.
  * The transaction is invoked by the market item owner.
  */
-transaction(assetId: String, price: UFix64, recipients: {Address:UFix64}) {
+transaction(assetId: String, price: UFix64, shares: {String:UFix64}) {
 
     let nftProvider: Capability<&{NonFungibleToken.Provider, MintasticNFT.CollectionPublic}>
     let saleOffers:  &MintasticMarket.MarketStore
@@ -23,7 +22,7 @@ transaction(assetId: String, price: UFix64, recipients: {Address:UFix64}) {
     execute {
         let tokenIds    = self.nftProvider.borrow()!.getTokenIDs(assetId: assetId)
         let offering   <- MintasticMarket.createListOffer(tokenIds: tokenIds, assetId: assetId, provider: self.nftProvider)
-        let marketItem <- MintasticMarket.createMarketItem(assetId: assetId, price: price, nftOffering: <- offering, recipients: recipients)
+        let marketItem <- MintasticMarket.createMarketItem(assetId: assetId, price: price, nftOffering: <- offering, shares: shares)
         self.saleOffers.insert(item: <- marketItem)
     }
 }

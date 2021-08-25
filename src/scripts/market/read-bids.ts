@@ -9,7 +9,7 @@ import {CadenceEngine} from "../../engine/cadence-engine";
  * @param address the address of the market item owner
  * @param assetId the id of the asset
  */
-export function readBids(address: string, assetId: string): (CadenceEngine) => Promise<boolean> {
+export function readBids(address: string, assetId: string): (CadenceEngine) => Promise<number[]> {
     if (address.length === 0)
         throw Error("address must not be empty");
     if (assetId.length === 0)

@@ -10,8 +10,20 @@ import {CadenceEngine} from "../../engine/cadence-engine";
  * @param maxSupply the max supply of the asset
  */
 export function createAsset(asset: Asset, maxSupply: number): (CadenceEngine) => Promise<Asset> {
-    if (asset === undefined || asset == null)
+    if (asset === undefined || asset === null)
         throw Error("asset is must not be null");
+    if (asset.assetId === undefined || asset.assetId === null)
+        throw Error("asset.assetId must not be null");
+    if (asset.royalty === undefined || asset.royalty === null)
+        throw Error("asset.royalty must not be null");
+    if (asset.type === undefined || asset.type === null)
+        throw Error("asset.type must not be null");
+    if (asset.content === undefined || asset.content === null)
+        throw Error("asset.content must not be null");
+    if (asset.series === undefined || asset.series === null)
+        throw Error("asset.series must not be null");
+    if (asset.creators === undefined || asset.creators === null)
+        throw Error("asset.creators must not be null");
     if (maxSupply <= 0)
         throw Error("the max supply must be greater than zero")
 
@@ -27,9 +39,7 @@ export function createAsset(asset: Asset, maxSupply: number): (CadenceEngine) =>
             fcl.limit(100),
             fcl.args([
                 fcl.arg(
-                    asset.creators.map(e => {
-                        return {key: e.creatorId, value: e.share}
-                    }),
+                    asset.creators.map(e => ({key: e.creatorId, value: e.share})),
                     t.Dictionary({key: t.String, value: t.UFix64})
                 ),
                 fcl.arg(asset.assetId, t.String),

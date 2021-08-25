@@ -4,7 +4,7 @@ import {CadenceEngine} from "../../engine/cadence-engine";
 
 // noinspection DuplicatedCode
 /**
- * This transaction purchases a NFT by creating mintastic credits on the fly after a fiat payment.
+ * This transaction purchases a NFT by creating a mintastic market payment on the fly after a fiat payment.
  * Due to the off-chain characteristics of this payment method, the mintastic contract owner issues this transaction.
  *
  * @param owner
@@ -13,8 +13,9 @@ import {CadenceEngine} from "../../engine/cadence-engine";
  * @param price
  * @param amount
  * @param unlock indicates whether to unlock the offering before buying it
+ * @param bid
  */
-export function buyWithFiat(owner: string, buyer: string, assetId: string, price: string, amount: number, unlock: boolean = false): (CadenceEngine) => Promise<void> {
+export function buyWithFiat(owner: string, buyer: string, assetId: string, price: string, amount: number, unlock: boolean = false, bid: number | undefined = undefined): (CadenceEngine) => Promise<void> {
     if (!/^-?\d+(\.\d+)$/.test(price))
         throw Error("invalid price found");
     if (owner.length == 0)
@@ -42,10 +43,14 @@ export function buyWithFiat(owner: string, buyer: string, assetId: string, price
                 fcl.arg(buyer, t.Address),
                 fcl.arg(assetId, t.String),
                 fcl.arg(price, t.UFix64),
-                fcl.arg(amount, t.UInt16)
+                fcl.arg(amount, t.UInt16),
+                fcl.arg(bid, t.Optional(t.UInt64)),
+
             ])
         ])
             .then(fcl.decode)
             .then(txId => fcl.tx(txId).onceSealed())
+            .then(e => e.events.find((d) => d.type.endsWith("MintasticMarket.MarketItemSold")))
+            .then(e => e.data);
     }
 }

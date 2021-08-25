@@ -1,33 +1,25 @@
-title Sell NFT (off-chain, list offering)
+title Sell NFT (off-chain-payment, list offering)
 
 fontawesome5solid f542 OnFlow #cyan
 fontawesome5solid f007 Alice #00ffff
 fontawesome5solid f6d1 MintasticMarket #00ffff
-fontawesome5solid f6d1 MintasticCredit #00ffff
-fontawesome5solid f007 Bob #00ffff
 fontawesome5solid f007 Mintastic #00ffff
-
+fontawesome5solid f007 Bob #00ffff
 
 Alice-#cyan>MintasticMarket:createListOffer(...)
 Alice<#cyan--MintasticMarket:list offering
 
 Alice-#cyan>MintasticMarket:createMarketItem(...)
 OnFlow<#cyan-MintasticMarket:emit MarketItemInserted(...)
-Alice<#cyan--MintasticMarket:marked item
+MintasticMarket--#cyan>Alice:marked item
 
 activate MintasticMarket
 
-Bob-#violet>Mintastic:init fiat money payment
-MintasticMarket<#cyan-Mintastic: lock offering
-Bob-#violet>Mintastic:transfer fiat money
+MintasticMarket<#cyan-Bob:buy(...)
 
-MintasticCredit<#cyan-Mintastic:createCredits(...)
-MintasticCredit--#cyan>Mintastic:credits
+Alice<#cyan-MintasticMarket:routePaymentShare(...)
+Alice<#cyan-MintasticMarket:routeRoyaltyShare(...)
+MintasticMarket-#cyan>Mintastic:routeServiceShare(...)
 
-MintasticCredit<#cyan-Mintastic:exchange(...)
-MintasticCredit--#cyan>Mintastic:payment
-
-MintasticMarket<#cyan-Mintastic: unlock and buy(...)
-Alice<#violet-MintasticMarket:transfer fiat money
 OnFlow<#cyan-MintasticMarket:emit MarketItemAccepted(...)
 Alice--#cyan>Bob:NFT

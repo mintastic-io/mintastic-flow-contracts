@@ -2,7 +2,6 @@ import FungibleToken from 0xFungibleToken
 import NonFungibleToken from 0xNonFungibleToken
 import MintasticNFT from 0xMintasticNFT
 import MintasticMarket from 0xMintasticMarket
-import MintasticCredit from 0xMintasticCredit
 
 /*
  * This transaction is used to lock a nft offering of a market item.

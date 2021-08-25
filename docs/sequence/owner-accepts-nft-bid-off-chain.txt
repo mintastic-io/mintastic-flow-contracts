@@ -1,22 +1,19 @@
-title Owner accepts NFT bid (off-chain)
+title Owner accepts NFT bid (off-chain-payment)
 
 fontawesome5solid f542 OnFlow #cyan
 fontawesome5solid f007 Alice #00ffff
 fontawesome5solid f6d1 MintasticMarket #00ffff
-fontawesome5solid f6d1 MintasticCredit #00ffff
 fontawesome5solid f007 Bob #00ffff
 fontawesome5solid f007 Mintastic #00ffff
 
-Bob-#violet>Mintastic:init bid(...)
-MintasticCredit<#cyan-Mintastic:createBid(...)
-MintasticCredit--#cyan>Mintastic:bid
-
-MintasticMarket<#cyan-Mintastic:bid(...)
+Bob-#cyan>MintasticMarket:bid(...)
 Alice-#cyan>MintasticMarket:acceptBid(...)
-MintasticMarket-#cyan>Mintastic:transfer NFT
 OnFlow<#cyan-MintasticMarket:emit MarketItemBidAccepted(...)
+
+Bob-#violet>Mintastic:fiat payment()
+MintasticMarket<#cyan-Mintastic:unlock and buy()
+
 OnFlow<#cyan-MintasticMarket:emit MarketItemAccepted(...)
-Bob-#violet>Mintastic:transfer fiat money
 
 Alice<#violet-Mintastic:transfer fiat money
-Bob<#cyan-Mintastic:transfer NFT
+Alice-#cyan>Bob:transfer NFT

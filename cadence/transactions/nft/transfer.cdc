@@ -6,19 +6,25 @@ import NonFungibleToken from 0xNonFungibleToken
  */
 transaction(buyer: Address, assetId: String, amount: UInt16) {
 
-    let nftProvider : &MintasticNFT.Collection
-    let nftReceiver: Capability<&{NonFungibleToken.Receiver}>
+    let nftProvider: &MintasticNFT.Collection
+    let nftReceiver: &{NonFungibleToken.Receiver}
 
-    prepare(mintastic: AuthAccount) {
+    prepare(owner: AuthAccount) {
         let ex1 = "could not borrow mintastic nft provider"
         let ex2 = "could not borrow mintastic nft receiver"
 
-        self.nftProvider = mintastic.borrow<&MintasticNFT.Collection>(from:MintasticNFT.MintasticNFTStoragePath) ?? panic(ex1)
-        self.nftReceiver = getAccount(buyer).getCapability<&{NonFungibleToken.Receiver}>(MintasticNFT.MintasticNFTPublicPath)
+        let path = MintasticNFT.MintasticNFTPublicPath
+
+        self.nftProvider = owner.borrow<&MintasticNFT.Collection>(from: /storage/MintasticNFTs) ?? panic(ex1)
+        self.nftReceiver = getAccount(buyer).getCapability<&{NonFungibleToken.Receiver}>(path).borrow() ?? panic(ex2)
     }
 
     execute {
         let tokenIds = self.nftProvider.getTokenIDs(assetId: assetId)
+
+        if (tokenIds.length == 0) {
+            panic("no tokens found")
+        }
 
         var a:UInt16 = 0
         while a < amount {
@@ -26,7 +32,7 @@ transaction(buyer: Address, assetId: String, amount: UInt16) {
             let tokenId = tokenIds.removeFirst()
             let token <- self.nftProvider.withdraw(withdrawID: tokenId) as! @MintasticNFT.NFT
             assert(token.data.assetId == assetId, message: "asset id mismatch")
-            self.nftReceiver.borrow()!.deposit(token: <- token)
+            self.nftReceiver.deposit(token: <- token)
         }
     }
 }

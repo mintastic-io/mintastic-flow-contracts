@@ -36,5 +36,7 @@ export function lockOffering(owner: string, assetId: string, amount: number): (C
         ])
             .then(fcl.decode)
             .then(txId => fcl.tx(txId).onceSealed())
+            .then(e => e.events.find((d) => d.type.endsWith("MintasticMarket.MarketItemLocked")))
+            .then(e => e.data);
     }
 }

@@ -2,21 +2,24 @@ import FungibleToken from 0xFungibleToken
 import NonFungibleToken from 0xNonFungibleToken
 import MintasticNFT from 0xMintasticNFT
 import MintasticMarket from 0xMintasticMarket
-import MintasticCredit from 0xMintasticCredit
 
 /*
- * This transaction is used to accept a bid on a market item.
- * The transaction is invoked by the market item owner.
+ * This transaction is used to accept a market item bid.
  */
 transaction(owner: Address, assetId: String, bidId: UInt64) {
-    let marketStore: &MintasticMarket.MarketStore
 
-    prepare(owner: AuthAccount) {
-        let ex = "cannot borrow mintastic market store reference"
-        self.marketStore = owner.borrow<&MintasticMarket.MarketStore>(from: MintasticMarket.MintasticMarketStoreStoragePath) ?? panic(ex)
+    let marketStore: &{MintasticMarket.PublicMarketStore}
+    let marketItem:  &{MintasticMarket.PublicMarketItem}
+
+    prepare(mintastic: AuthAccount) {
+        let ex1 = "could not borrow mintastic sale offer collection reference"
+        let ex2 = "could not borrow mintastic market item"
+
+        self.marketStore = getAccount(owner).getCapability<&{MintasticMarket.PublicMarketStore}>(MintasticMarket.MintasticMarketStorePublicPath).borrow() ?? panic(ex1)
+        self.marketItem = self.marketStore.borrowMarketItem(assetId: assetId) ?? panic(ex2)
     }
 
     execute {
-        self.marketStore.acceptBid(assetId: assetId, bidId: bidId)
+        self.marketItem.acceptBid(id: bidId)
     }
 }

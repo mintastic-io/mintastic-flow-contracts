@@ -1,7 +1,7 @@
 import * as fcl from "@onflow/fcl"
 import * as t from "@onflow/types"
 import {CadenceEngine} from "../../engine/cadence-engine";
-import {Addresses} from "../../types";
+import {Shares} from "../../types";
 
 /**
  * This transaction creates a list offering based market item.
@@ -11,21 +11,21 @@ import {Addresses} from "../../types";
  * @param owner the owner of the market item
  * @param assetId the asset id of the market item
  * @param price the price of the market item
- * @param addresses the payment recipient addresses (optional)
+ * @param shares the payment recipient shares
  */
-export function createListOffer(owner: string, assetId: string, price: string, addresses?: Addresses): (CadenceEngine) => Promise<void> {
-    if (owner.length == 0)
+export function createListOffer(owner: string, assetId: string, price: string, shares: Shares): (CadenceEngine) => Promise<void> {
+    if (owner.length === 0)
         throw Error("invalid owner address found");
-    if (assetId.length == 0)
+    if (assetId.length === 0)
         throw Error("invalid asset id found");
+    if (shares.length === 0)
+        throw Error("no shares found")
     if (!/^-?\d+(\.\d+)$/.test(price))
         throw Error("invalid price found");
 
     return (engine: CadenceEngine) => {
         const auth = engine.getAuth(owner);
         const code = engine.getCode("transactions/market/create-list-offer");
-
-        const recipients = addresses ? addresses : [{address: owner, share: "1.0"}]
 
         return fcl.send([
             fcl.transaction`${code}`,
@@ -37,14 +37,14 @@ export function createListOffer(owner: string, assetId: string, price: string, a
                 fcl.arg(assetId, t.String),
                 fcl.arg(price, t.UFix64),
                 fcl.arg(
-                    recipients.map(e => {
-                        return {key: e.address, value: e.share}
-                    }),
-                    t.Dictionary({key: t.Address, value: t.UFix64})
-                ),
+                    shares.map(e => ({key: e.creatorId, value: e.share})),
+                    t.Dictionary({key: t.String, value: t.UFix64})
+                )
             ])
         ])
             .then(fcl.decode)
             .then(txId => fcl.tx(txId).onceSealed())
+            .then(e => e.events.find((d) => d.type.endsWith("MintasticMarket.MarketItemInserted")))
+            .then(e => e.data);
     }
 }

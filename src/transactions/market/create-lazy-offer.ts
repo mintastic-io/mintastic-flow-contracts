@@ -1,21 +1,22 @@
 import * as fcl from "@onflow/fcl"
 import * as t from "@onflow/types"
 import {CadenceEngine} from "../../engine/cadence-engine";
+import {Shares} from "../../types";
 
 /**
  * This transaction creates a lazy offering based market item.
  * A lazy offering uses a nft minter to mint tokens on the fly.
  * The transaction is invoked by mintastic.
  *
- * @param owner the owner of the market item
  * @param assetId the asset id of the market item
  * @param price the price of the market item
+ * @param shares the market item shares
  */
-export function createLazyOffer(owner: string, assetId: string, price: string): (CadenceEngine) => Promise<void> {
-    if (owner.length == 0)
-        throw Error("invalid owner address found");
-    if (assetId.length == 0)
+export function createLazyOffer(assetId: string, price: string, shares: Shares): (CadenceEngine) => Promise<void> {
+    if (assetId.length === 0)
         throw Error("invalid asset id found");
+    if (shares.length === 0)
+        throw Error("no shares found")
     if (!/^-?\d+(\.\d+)$/.test(price))
         throw Error("invalid price found");
 
@@ -30,12 +31,17 @@ export function createLazyOffer(owner: string, assetId: string, price: string): 
             fcl.authorizations([auth]),
             fcl.limit(100),
             fcl.args([
-                fcl.arg(owner, t.Address),
                 fcl.arg(assetId, t.String),
-                fcl.arg(price, t.UFix64)
+                fcl.arg(price, t.UFix64),
+                fcl.arg(
+                    shares.map(e => ({key: e.creatorId, value: e.share})),
+                    t.Dictionary({key: t.String, value: t.UFix64})
+                )
             ])
         ])
             .then(fcl.decode)
             .then(txId => fcl.tx(txId).onceSealed())
+            .then(e => e.events.find((d) => d.type.endsWith("MintasticMarket.MarketItemInserted")))
+            .then(e => e.data);
     }
 }

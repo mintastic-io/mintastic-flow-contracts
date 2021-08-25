@@ -16,7 +16,6 @@ import {readNextSeries} from "../src/scripts/nft/read-next-series";
 import {getEnv, setupEnv} from "./utils/setup-env";
 import {readSupply} from "../src/scripts/nft/read-supply";
 import {readOwnedAssets} from "../src/scripts/nft/read-owned-assets";
-import {storeCreator} from "../src/transactions/nft/store-creator";
 
 const getUuid = require('uuid-by-string')
 
@@ -34,7 +33,6 @@ describe("mintastic contract test suite", function () {
         await engine.execute(setupCollector(bob));
         expect(await engine.execute(hasCollectorCollection(bob))).toBeTruthy();
 
-        await engine.execute(storeCreator(getUuid(alice), alice))
         const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         expect((await engine.execute(readAllAssetIds())).length > 0).toBeTruthy();
 
@@ -52,7 +50,6 @@ describe("mintastic contract test suite", function () {
         const {engine, alice} = await getEnv()
         const series = await (engine.execute(readNextSeries(getUuid(alice))))
 
-        await engine.execute(storeCreator(getUuid(alice), alice))
         await engine.execute(createAsset(newAsset(getUuid(alice), uuid(), series), 10));
         await engine.execute(lockSeries(getUuid(alice), series));
         await expect(engine.execute(createAsset(newAsset(getUuid(alice), uuid(), series), 10))).rejects.toContain("series is locked")

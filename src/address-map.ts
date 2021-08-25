@@ -13,17 +13,15 @@ export class AddressMap {
         const promise1 = config().get("0xMintasticNFT");
         const promise2 = config().get("0xNonFungibleToken");
         const promise3 = config().get("0xFungibleToken");
-        const promise4 = config().get("0xMintasticCredit");
-        const promise5 = config().get("0xMintasticMarket");
+        const promise4 = config().get("0xMintasticMarket");
 
-        return Promise.all([promise1, promise2, promise3, promise4, promise5])
+        return Promise.all([promise1, promise2, promise3, promise4])
             .then(values => {
                 return {
                     "0xMintasticNFT": values[0],
                     "0xNonFungibleToken": values[1],
                     "0xFungibleToken": values[2],
-                    "0xMintasticCredit": values[3],
-                    "0xMintasticMarket": values[4]
+                    "0xMintasticMarket": values[3]
                 }
             })
             .then(e => new AddressMap(e));
@@ -49,6 +47,5 @@ interface AddressMapping {
     "0xMintasticNFT": string
     "0xNonFungibleToken": string
     "0xFungibleToken": string
-    "0xMintasticCredit": string
     "0xMintasticMarket":string
 }

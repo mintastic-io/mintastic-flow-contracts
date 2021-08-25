@@ -1,6 +1,5 @@
 import NonFungibleToken from 0xNonFungibleToken
 import MintasticNFT     from 0xMintasticNFT
-import MintasticCredit  from 0xMintasticCredit
 import MintasticMarket  from 0xMintasticMarket
 
 /*

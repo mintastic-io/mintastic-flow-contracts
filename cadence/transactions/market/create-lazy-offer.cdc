@@ -6,7 +6,7 @@ import MintasticMarket  from 0xMintasticMarket
  * A lazy offering uses a nft minter to mint tokens on the fly.
  * The transaction is invoked by mintastic.
  */
-transaction(owner: Address, assetId: String, price: UFix64) {
+transaction(assetId: String, price: UFix64, shares: {String:UFix64}) {
 
     let minter: &MintasticNFT.MinterFactory
     let market: &MintasticMarket.MarketStore
@@ -25,7 +25,7 @@ transaction(owner: Address, assetId: String, price: UFix64) {
     execute {
         let supply = MintasticNFT.assets[assetId]!.supply.max
         let offering   <- MintasticMarket.createLazyOffer(assetId: assetId, minter: <- self.minter.createMinter(allowedAmount: supply))
-        let marketItem <- MintasticMarket.createMarketItem(assetId: assetId, price: price, nftOffering: <- offering, recipients: {owner:1.0})
+        let marketItem <- MintasticMarket.createMarketItem(assetId: assetId, price: price, nftOffering: <- offering, shares: shares)
         self.market.insert(item: <- marketItem)
     }
 }

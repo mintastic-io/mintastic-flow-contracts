@@ -104,3 +104,7 @@ dist
 .tern-port
 /flow.json.*
 /flow.json
+
+# archives
+/cadence/transactions/market/archive/
+/src/transactions/market/archive/

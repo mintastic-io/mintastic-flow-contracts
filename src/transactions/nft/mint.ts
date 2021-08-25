@@ -9,7 +9,7 @@ import {CadenceEngine} from "../../engine/cadence-engine";
  * @param assetId the id of the asset to mint
  * @param amount the amount of tokens to mint
  */
-export function mint(recipient: string, assetId: string, amount: number): (CadenceEngine) => Promise<void> {
+export function mint(recipient: string, assetId: string, amount: number): (CadenceEngine) => Promise<{}> {
     if (recipient.length === 0)
         throw Error("recipient address must not be empty");
     if (assetId.length === 0)
@@ -35,5 +35,7 @@ export function mint(recipient: string, assetId: string, amount: number): (Caden
         ])
             .then(fcl.decode)
             .then(txId => fcl.tx(txId).onceSealed())
+            .then(e => e.events.find((d) => d.type.endsWith("MintasticNFT.Mint")))
+            .then(e => e.data);
     }
 }

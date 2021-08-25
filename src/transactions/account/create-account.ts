@@ -18,7 +18,7 @@ export function createAccount(): (CadenceEngine) => Promise<string> {
                 fcl.args([fcl.arg(pubKey, t.String)]),
             ])
         })
-            .then(response => fcl.tx(response).onceExecuted())
+            .then(e => fcl.tx(e).onceSealed())
             .then(e => e.events.find((d) => d.type === "flow.AccountCreated"))
             .then(e => e.data.address);
     }
