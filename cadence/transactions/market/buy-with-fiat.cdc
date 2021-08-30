@@ -6,7 +6,7 @@ import MintasticMarket from 0xMintasticMarket
  * This transaction purchases a NFT by creating a mintastic market payment on the fly after a fiat payment.
  * Due to the off-chain characteristics of this payment method, the mintastic contract owner issues this transaction.
  */
-transaction(owner: Address, buyer: Address, assetId: String, price: UFix64, amount: UInt16, bid: UInt64?) {
+transaction(owner: Address, buyer: Address, assetId: String, price: UFix64, amount: UInt16, bidId: UInt64?) {
 
     let nftProvider: &{MintasticMarket.PublicMarketStore}
     let nftReceiver: &{NonFungibleToken.Receiver}
@@ -23,7 +23,7 @@ transaction(owner: Address, buyer: Address, assetId: String, price: UFix64, amou
     }
 
     execute {
-        let payment <- self.marketAdmin.createPayment(ref: "123", amount: UFix64(amount) * price, currency: "eur", exchangeRate: 1.0, bid: bid)
+        let payment <- self.marketAdmin.createPayment(ref: "123", amount: UFix64(amount) * price, currency: "eur", exchangeRate: 1.0, bid: bidId)
         self.nftProvider.buy(assetId: assetId, amount: amount, payment: <- payment, receiver: self.nftReceiver)
     }
 }

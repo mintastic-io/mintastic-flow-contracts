@@ -17,7 +17,7 @@ pub contract MintasticNFT: NonFungibleToken {
     pub event ContractInitialized()
     pub event Withdraw(id: UInt64, from: Address?)
     pub event Deposit(id: UInt64, to: Address?)
-    pub event Mint(id: UInt64, assetId: String)
+    pub event Mint(id: UInt64, assetId: String, amount: UInt16)
     pub event CollectionDeleted(from: Address?)
 
     pub var totalSupply:  UInt64
@@ -330,9 +330,9 @@ pub contract MintasticNFT: NonFungibleToken {
                 let data = TokenData(assetId: assetId, edition: supply.cur)
 			    collection.deposit(token: <- create NFT(id: MintasticNFT.totalSupply, data: data, items: {}))
 
-                emit Mint(id: MintasticNFT.totalSupply, assetId: assetId)
                 MintasticNFT.totalSupply = MintasticNFT.totalSupply + (1 as UInt64)
             }
+            emit Mint(id: MintasticNFT.totalSupply, assetId: assetId, amount: amount)
             MintasticNFT.assets[assetId]!.setCurSupply(supply: supply.cur)
             self.allowedAmount = self.allowedAmount - amount
 

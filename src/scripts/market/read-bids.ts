@@ -6,11 +6,11 @@ import {CadenceEngine} from "../../engine/cadence-engine";
  * This script is used to read all bids of an market item offer related
  * to the given address and asset id.
  *
- * @param address the address of the market item owner
+ * @param owner the address of the market item owner
  * @param assetId the id of the asset
  */
-export function readBids(address: string, assetId: string): (CadenceEngine) => Promise<number[]> {
-    if (address.length === 0)
+export function readBids(owner: string, assetId: string): (CadenceEngine) => Promise<number[]> {
+    if (owner.length === 0)
         throw Error("address must not be empty");
     if (assetId.length === 0)
         throw Error("assetId must not be empty");
@@ -22,7 +22,7 @@ export function readBids(address: string, assetId: string): (CadenceEngine) => P
             .send([
                 fcl.script`${code}`,
                 fcl.args([
-                    fcl.arg(address, t.Address),
+                    fcl.arg(owner, t.Address),
                     fcl.arg(assetId, t.String)
                 ]),
             ])

@@ -241,7 +241,8 @@ pub contract MintasticMarket {
                 nftReceiver.deposit(token: <-tokens.withdraw(withdrawID: key))
             }
             if (self.owner?.address != nil) {
-                emit MarketItemSold(assetId: self.assetId, owner: self.owner?.address!, tokenIds: ids, pid: pid, ref: ref)
+                let owner = self.owner?.address!
+                emit MarketItemSold(assetId: self.assetId, owner: owner, tokenIds: ids, pid: pid, ref: ref)
             }
             destroy tokens
 
@@ -433,13 +434,13 @@ pub contract MintasticMarket {
             let price = offer.price * UFix64(amount)
 
             if (payment.bid == nil) {
-                let ex = "payment mismatch2: ".concat(payment.amount.toString()).concat(" != ").concat(price.toString())
+                let ex = "payment mismatch: ".concat(payment.amount.toString()).concat(" != ").concat(price.toString())
                 assert(price == payment.amount, message: ex)
             }
             else {
                 let bid <- offer.bids.remove(key: payment.bid!)!
                 let price2 = (bid.price * UFix64(bid.amount))
-                let ex = "payment mismatch1: ".concat(payment.amount.toString()).concat(" != ").concat(price2.toString())
+                let ex = "payment mismatch: ".concat(payment.amount.toString()).concat(" != ").concat(price2.toString())
                 let ex2 = "bid amount mismatch: ".concat(amount.toString()).concat(" != ").concat(bid.amount.toString())
 
                 assert(payment.amount == price2, message: ex)

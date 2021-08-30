@@ -13,9 +13,9 @@ import {CadenceEngine} from "../../engine/cadence-engine";
  * @param price
  * @param amount
  * @param unlock indicates whether to unlock the offering before buying it
- * @param bid
+ * @param bidId
  */
-export function buyWithFiat(owner: string, buyer: string, assetId: string, price: string, amount: number, unlock: boolean = false, bid: number | undefined = undefined): (CadenceEngine) => Promise<void> {
+export function buyWithFiat(owner: string, buyer: string, assetId: string, price: string, amount: number, unlock: boolean = false, bidId: number | undefined = undefined): (CadenceEngine) => Promise<void> {
     if (!/^-?\d+(\.\d+)$/.test(price))
         throw Error("invalid price found");
     if (owner.length == 0)
@@ -44,7 +44,7 @@ export function buyWithFiat(owner: string, buyer: string, assetId: string, price
                 fcl.arg(assetId, t.String),
                 fcl.arg(price, t.UFix64),
                 fcl.arg(amount, t.UInt16),
-                fcl.arg(bid, t.Optional(t.UInt64)),
+                fcl.arg(bidId, t.Optional(t.UInt64)),
 
             ])
         ])
