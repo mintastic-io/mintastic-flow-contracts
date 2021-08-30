@@ -35,7 +35,7 @@ The Sequence diagram were created with https://sequencediagram.org/
 ![off-chain-payment](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/off-chain-payment.png)
 ![sell-list-nft-off-chain](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/sell-list-nft-off-chain.png)
 ![sell-lazy-nft-off-chain](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/sell-lazy-nft-off-chain.png)
-![owner-accepts-nft-bid-off-chain](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/owner-accepts-nft-bid-on-chain.png)
+![owner-accepts-nft-bid-off-chain](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/owner-accepts-nft-bid-off-chain.png)
 
 
 ## useful links
