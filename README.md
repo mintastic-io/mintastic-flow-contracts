@@ -32,10 +32,10 @@ Violet colored lines represent off-chain functions.
 The Sequence diagram were created with https://sequencediagram.org/
 
 ![create-and-mint-nft](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/create-and-mint-nft.png)
+![off-chain-payment](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/off-chain-payment.png)
 ![sell-list-nft-off-chain](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/sell-list-nft-off-chain.png)
-![sell-lazy-nft-on-chain](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/sell-lazy-nft-on-chain.png)
-![owner-accepts-nft-bid-on-chain](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/owner-accepts-nft-bid-on-chain.png)
-![owner-rejects-nft-bid-off-chain](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/owner-rejects-nft-bid-off-chain.png)
+![sell-lazy-nft-off-chain](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/sell-lazy-nft-off-chain.png)
+![owner-accepts-nft-bid-off-chain](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/owner-accepts-nft-bid-on-chain.png)
 
 
 ## useful links

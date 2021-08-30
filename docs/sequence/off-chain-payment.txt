@@ -1,4 +1,4 @@
-off-chain payment
+title off-chain payment
 
 fontawesome5solid f007 Alice #00ffff
 fontawesome5solid f6d1 MintasticMarket #00ffff
