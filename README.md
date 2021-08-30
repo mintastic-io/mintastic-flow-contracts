@@ -1,6 +1,4 @@
-![mintastic](https://raw.githubusercontent.com/mintastic-io/mintastic-flow-contracts/master/docs/image/mintastic_logo.png)
-All flow cadence contracts used by mintastic
-
+# mintastic-flow-contracts
 
 This repository contains all cadence flow contracts as well as script and transaction files.
 Furthermore, there are wrappers in the repository, which make the scripts and transactions executable using Typescript.
