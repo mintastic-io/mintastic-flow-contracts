@@ -48,15 +48,10 @@ files.forEach(file => {
     const stream = fs.createWriteStream('dist/cadence/contracts-local/' + file, {flags: 'a'});
 
     let content = readFile("./cadence/contracts/" + file);
-    content = content.replace("0xFiatPaymentProvider", '"./FiatPaymentProvider.cdc"');
-    content = content.replace("0xFlowPaymentProvider", '"./FlowPaymentProvider.cdc"');
     content = content.replace("0xFungibleToken", '"./FungibleToken.cdc"');
-    content = content.replace("0xMintasticCredit", '"./MintasticCredit.cdc"');
     content = content.replace("0xMintasticMarket", '"./MintasticMarket.cdc"');
     content = content.replace("0xMintasticNFT", '"./MintasticNFT.cdc"');
     content = content.replace("0xNonFungibleToken", '"./NonFungibleToken.cdc"');
-    content = content.replace("0xPaymentProviderProxy", '"./PaymentProviderProxy.cdc"');
-    content = content.replace("0xFlowToken", '0x7e60df042a9c0868');
 
     stream.write(content);
     stream.end();

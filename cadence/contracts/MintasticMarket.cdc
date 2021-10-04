@@ -95,14 +95,13 @@ pub contract MintasticMarket {
     pub resource interface PublicMarketItem {
         pub let assetId:     String
         pub var price:       UFix64
-        pub let bids:        @{UInt64: Bid}
-        pub let shares:      {String: UFix64}
         pub fun getSupply(): Int
         pub fun getLocked(): UInt64
         pub fun getShares(): {String:UFix64}
         pub fun appendBid(bid: @Bid)
         pub fun acceptBid(id: UInt64)
-        pub fun rejectBid(id: UInt64)
+        pub fun rejectBid(id: UInt64): @Bid
+        pub fun getBidIds(): [UInt64]
     }
 
     /**
@@ -134,6 +133,8 @@ pub contract MintasticMarket {
                 a = a + (1 as UInt16)
                 let tokenId = self.tokenIds.removeFirst()
                 let token <- self.provider.borrow()!.withdraw(withdrawID: tokenId) as! @MintasticNFT.NFT
+
+                assert(token.isInstance(Type<@MintasticNFT.NFT>()), message: "nft type mismatch")
                 assert(token.data.assetId == self.assetId, message: "asset id mismatch")
                 collection.deposit(token: <- token)
             }
@@ -182,7 +183,7 @@ pub contract MintasticMarket {
         }
 
         pub fun getSupply(): Int {
-            let supply = MintasticNFT.assets[self.assetId]!.supply
+            let supply = MintasticNFT.getAsset(assetId: self.assetId).supply
             return Int(supply.max - supply.cur)
         }
 
@@ -217,9 +218,8 @@ pub contract MintasticMarket {
         pub let assetId: String
         pub var price:   UFix64
         pub var locked:  UInt64
-        pub let bids:    @{UInt64: Bid}
-        pub let shares:  {String:UFix64}
-
+        access(self) let bids:    @{UInt64: Bid}
+        access(self) let shares:  {String:UFix64}
         access(self) let nftOffering: @{NFTOffering}
 
         // Returns a boolean value which indicates if the market item is sold out.
@@ -231,7 +231,7 @@ pub contract MintasticMarket {
             let balance = payment.amount
 
             self.emitServiceShare(payment: <- payment.split(balance * self.getServiceShare(amount: balance)))
-            self.emitRoyaltyShare(payment: <- payment.split(balance * MintasticNFT.assets[self.assetId]!.royalty))
+            self.emitRoyaltyShare(payment: <- payment.split(balance * MintasticNFT.getAsset(assetId: self.assetId).royalty))
             self.emitDefaultShare(payment: <- payment)
 
             let tokens <- self.nftOffering.provide(amount: amount)
@@ -262,7 +262,7 @@ pub contract MintasticMarket {
         access(self) fun emitRoyaltyShare(payment: @Payment) {
             let balance = payment.amount
 
-            let creators = MintasticNFT.assets[self.assetId]!.creators
+            let creators = MintasticNFT.getAsset(assetId: self.assetId).creators
             for creatorId in creators.keys {
                 let share <- payment.split(balance * creators[creatorId]!)
                 self.payout(payment: <- share, recipient: creatorId)
@@ -331,10 +331,13 @@ pub contract MintasticMarket {
             emit MarketItemBidAccepted(bidId: id, assetId: bid.assetId)
         }
 
-        pub fun rejectBid(id: UInt64) {
+        pub fun rejectBid(id: UInt64): @Bid {
             pre { self.bids[id] != nil: "bid not found" }
-            let bid <- self.bids.remove(key: id)
-            destroy bid
+            return <- self.bids.remove(key: id)!
+        }
+
+        pub fun getBidIds(): [UInt64] {
+            return self.bids.keys
         }
 
         destroy() {
@@ -344,13 +347,15 @@ pub contract MintasticMarket {
         }
 
         init(assetId: String, price: UFix64, nftOffering: @{NFTOffering}, shares: {String:UFix64}) {
-            pre { MintasticNFT.assets[assetId] != nil: "cannot find asset" }
             self.assetId      = assetId
             self.price        = price
             self.nftOffering <- nftOffering
             self.shares       = shares
             self.locked       = 0
             self.bids        <- {}
+
+            // check if asset is available
+            MintasticNFT.getAsset(assetId: assetId)
 
             assert(shares.length > 0, message: "no recipient(s) found")
             var sum:UFix64 = 0.0
@@ -438,7 +443,7 @@ pub contract MintasticMarket {
                 assert(price == payment.amount, message: ex)
             }
             else {
-                let bid <- offer.bids.remove(key: payment.bid!)!
+                let bid <- offer.rejectBid(id: payment.bid!)
                 let price2 = (bid.price * UFix64(bid.amount))
                 let ex = "payment mismatch: ".concat(payment.amount.toString()).concat(" != ").concat(price2.toString())
                 let ex2 = "bid amount mismatch: ".concat(amount.toString()).concat(" != ").concat(bid.amount.toString())

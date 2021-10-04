@@ -14,7 +14,7 @@ pub fun main(owner: Address, assetId: String): [UInt64]? {
     let assetIds = storeRef.getAssetIds()
     if (assetIds.contains(assetId)) {
         let item = storeRef.borrowMarketItem(assetId: assetId)!
-        return item.bids.keys
+        return item.getBidIds()
     }
     return []
 }

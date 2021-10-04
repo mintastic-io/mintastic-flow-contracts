@@ -9,5 +9,5 @@ pub fun main(address: Address, assetId: String): {String:UFix64} {
     let storeRef = storeCap.borrow<&{MintasticMarket.PublicMarketStore}>() ?? panic("cannot borrow market store")
 
     let item = storeRef.borrowMarketItem(assetId: assetId) ?? panic("no market item found")
-    return item.shares
+    return item.getShares()
 }

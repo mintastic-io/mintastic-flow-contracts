@@ -1,7 +1,7 @@
 import MintasticNFT from 0xMintasticNFT
 
 pub fun main(assetId: String): {String: UInt16} {
-    let asset = MintasticNFT.assets[assetId] ?? panic("asset  not found")
+    let asset = MintasticNFT.getAsset(assetId: assetId)
     let maxSupply = asset.supply.max
     let curSupply = asset.supply.cur
 

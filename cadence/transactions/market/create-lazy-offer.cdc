@@ -23,7 +23,7 @@ transaction(assetId: String, price: UFix64, shares: {String:UFix64}) {
     }
 
     execute {
-        let supply = MintasticNFT.assets[assetId]!.supply.max
+        let supply = MintasticNFT.getAsset(assetId: assetId).supply.max
         let offering   <- MintasticMarket.createLazyOffer(assetId: assetId, minter: <- self.minter.createMinter(allowedAmount: supply))
         let marketItem <- MintasticMarket.createMarketItem(assetId: assetId, price: price, nftOffering: <- offering, shares: shares)
         self.market.insert(item: <- marketItem)

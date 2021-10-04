@@ -20,6 +20,7 @@ transaction(owner: Address, assetId: String, bidId: UInt64) {
     }
 
     execute {
-        self.marketItem.rejectBid(id: bidId)
+        let bid <- self.marketItem.rejectBid(id: bidId)
+        destroy bid
     }
 }

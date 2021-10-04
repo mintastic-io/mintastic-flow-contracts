@@ -17,21 +17,17 @@ pub contract MintasticNFT: NonFungibleToken {
     pub event ContractInitialized()
     pub event Withdraw(id: UInt64, from: Address?)
     pub event Deposit(id: UInt64, to: Address?)
-    pub event Mint(id: UInt64, assetId: String, amount: UInt16)
+    pub event MintAsset(id: UInt64, assetId: String, amount: UInt16)
+    pub event BurnAsset(id: UInt64, assetId: String)
     pub event CollectionDeleted(from: Address?)
 
     pub var totalSupply:  UInt64
-    pub let assets:       {String: Asset}
-    pub let lockedSeries: {String: [UInt16]}
+    access(self) let assets:       {String: Asset}
+    access(self) let lockedSeries: {String: [UInt16]}
 
     // Common interface for the NFT data.
     pub resource interface TokenDataAware {
         pub let data: TokenData
-    }
-
-    // Common interface for the NFT composability.
-    pub resource interface Composable {
-        pub let items: @{String:{TokenDataAware, NonFungibleToken.INFT}}
     }
 
     /**
@@ -40,10 +36,10 @@ pub contract MintasticNFT: NonFungibleToken {
      * an edition information. In addition to that each NFT can have other
      * NFTs which makes it composable.
      */
-    pub resource NFT: NonFungibleToken.INFT, TokenDataAware, Composable {
+    pub resource NFT: NonFungibleToken.INFT, TokenDataAware {
         pub let id: UInt64
         pub let data: TokenData
-        pub let items: @{String:{TokenDataAware, NonFungibleToken.INFT}}
+        access(self) let items: @{String:{TokenDataAware, NonFungibleToken.INFT}}
 
         init(id: UInt64, data: TokenData, items: @{String:{TokenDataAware, NonFungibleToken.INFT}}) {
             self.id = id
@@ -52,6 +48,7 @@ pub contract MintasticNFT: NonFungibleToken {
         }
 
         destroy() {
+          emit BurnAsset(id: self.id, assetId: self.data.assetId)
           destroy self.items
         }
     }
@@ -332,7 +329,7 @@ pub contract MintasticNFT: NonFungibleToken {
 
                 MintasticNFT.totalSupply = MintasticNFT.totalSupply + (1 as UInt64)
             }
-            emit Mint(id: MintasticNFT.totalSupply, assetId: assetId, amount: amount)
+            emit MintAsset(id: MintasticNFT.totalSupply, assetId: assetId, amount: amount)
             MintasticNFT.assets[assetId]!.setCurSupply(supply: supply.cur)
             self.allowedAmount = self.allowedAmount - amount
 
@@ -344,6 +341,19 @@ pub contract MintasticNFT: NonFungibleToken {
 		}
 	}
 
+	pub fun getAsset(assetId: String): &MintasticNFT.Asset {
+	    pre { self.assets[assetId] != nil: "asset not found" }
+	    return &self.assets[assetId] as &MintasticNFT.Asset
+	}
+
+	pub fun getAssetIds(): [String] {
+	    return self.assets.keys
+	}
+
+    pub fun getLockedSeries(creatorId: String): [UInt16]? {
+        return self.lockedSeries[creatorId]
+    }
+
 	init() {
         self.totalSupply  = 0
         self.lockedSeries = {}
@@ -352,8 +362,8 @@ pub contract MintasticNFT: NonFungibleToken {
         self.MintasticNFTPublicPath     = /public/MintasticNFTs
         self.MintasticNFTPrivatePath    = /private/MintasticNFTs
         self.MintasticNFTStoragePath    = /storage/MintasticNFTs
-        self.AssetRegistryStoragePath   = /storage/AssetRegistry
-        self.MinterFactoryStoragePath   = /storage/MinterFactory
+        self.AssetRegistryStoragePath   = /storage/MintasticAssetRegistry
+        self.MinterFactoryStoragePath   = /storage/MintasticMinterFactory
 
         self.account.save(<- create AssetRegistry(), to: self.AssetRegistryStoragePath)
         self.account.save(<- create MinterFactory(), to: self.MinterFactoryStoragePath)
