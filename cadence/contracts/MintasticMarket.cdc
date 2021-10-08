@@ -127,18 +127,19 @@ pub contract MintasticMarket {
         pub fun provide(amount: UInt16): @NonFungibleToken.Collection {
             pre { self.getSupply() >= Int(amount): "supply/demand mismatch" }
             assert((self.getSupply() - Int(self.locked)) >= Int(amount), message: "supply/demand mismatch due to locked elements")
-            let collection <- MintasticNFT.createEmptyCollection()
+            let sourceCollection = self.provider.borrow()!
+            let targetCollection <- MintasticNFT.createEmptyCollection()
+
             var a:UInt16 = 0
             while a < amount {
                 a = a + (1 as UInt16)
                 let tokenId = self.tokenIds.removeFirst()
-                let token <- self.provider.borrow()!.withdraw(withdrawID: tokenId) as! @MintasticNFT.NFT
+                let token <- sourceCollection.withdraw(withdrawID: tokenId) as! @MintasticNFT.NFT
 
-                assert(token.isInstance(Type<@MintasticNFT.NFT>()), message: "nft type mismatch")
                 assert(token.data.assetId == self.assetId, message: "asset id mismatch")
-                collection.deposit(token: <- token)
+                targetCollection.deposit(token: <- token)
             }
-            return <- collection
+            return <- targetCollection
         }
 
         pub fun getSupply(): Int {
