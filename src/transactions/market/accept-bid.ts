@@ -37,6 +37,6 @@ export function acceptBid(owner: string, assetId: string, bidId: number): (Caden
             .then(fcl.decode)
             .then(txId => fcl.tx(txId).onceSealed())
             .then(e => e.events.find((d) => d.type.endsWith("MintasticMarket.MarketItemBidAccepted")))
-            .then(e => e.data.bidId);
+            .then(e => engine.getListener().onAcceptBid(e.txId, owner, assetId, bidId).then(_ => e.data.bidId));
     }
 }

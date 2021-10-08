@@ -36,6 +36,6 @@ export function mint(recipient: string, assetId: string, amount: number): (Caden
             .then(fcl.decode)
             .then(txId => fcl.tx(txId).onceSealed())
             .then(e => e.events.find((d) => d.type.endsWith("MintasticNFT.MintAsset")))
-            .then(e => e.data);
+            .then(e => engine.getListener().onMint(e.txId, recipient, assetId, amount).then(_ => e.data));
     }
 }

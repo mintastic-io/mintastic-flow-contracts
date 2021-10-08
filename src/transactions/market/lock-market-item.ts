@@ -31,6 +31,8 @@ export function lockMarketItem(owner: string, assetId: string): (CadenceEngine) 
             ])
         ])
             .then(fcl.decode)
-            .then(txId => fcl.tx(txId).onceSealed())
+            .then(txId => fcl.tx(txId).onceSealed().then(_ => {
+                return engine.getListener().onLockMarketItem(txId, owner, assetId);
+            }))
     }
 }

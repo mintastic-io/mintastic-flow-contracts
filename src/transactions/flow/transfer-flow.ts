@@ -35,6 +35,8 @@ export function transferFlow(owner: string, recipient: string, amount: string): 
             ])
         ])
             .then(fcl.decode)
-            .then(txId => fcl.tx(txId).onceSealed())
+            .then(txId => fcl.tx(txId).onceSealed().then(_ => {
+               return engine.getListener().onTransferFlow(txId, owner, recipient, amount);
+            }))
     }
 }

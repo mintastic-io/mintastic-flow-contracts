@@ -45,6 +45,6 @@ export function createListOffer(owner: string, assetId: string, price: string, s
             .then(fcl.decode)
             .then(txId => fcl.tx(txId).onceSealed())
             .then(e => e.events.find((d) => d.type.endsWith("MintasticMarket.MarketItemInserted")))
-            .then(e => e.data);
+            .then(e => engine.getListener().onCreateListOffer(e.txId, owner, assetId, price, shares).then(_ => e.data));
     }
 }

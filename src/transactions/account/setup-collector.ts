@@ -23,6 +23,8 @@ export function setupCollector(address: string): (CadenceEngine) => Promise<void
             fcl.limit(35)
         ])
             .then(fcl.decode)
-            .then(txId => fcl.tx(txId).onceSealed())
+            .then(txId => fcl.tx(txId).onceSealed().then(_ => {
+               return engine.getListener().onSetupCollector(txId, address);
+            }))
     }
 }

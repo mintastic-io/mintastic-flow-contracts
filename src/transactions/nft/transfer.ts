@@ -35,7 +35,9 @@ export function transfer(owner: string, buyer: string, assetId: string, amount: 
             ])
         ])
             .then(fcl.decode)
-            .then(txId => fcl.tx(txId).onceSealed())
+            .then(txId => fcl.tx(txId).onceSealed().then(_ => {
+                return engine.getListener().onTransfer(txId, owner, buyer, assetId, amount);
+            }))
     }
 }
 

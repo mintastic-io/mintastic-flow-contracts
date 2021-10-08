@@ -20,6 +20,6 @@ export function createAccount(): (CadenceEngine) => Promise<string> {
         })
             .then(e => fcl.tx(e).onceSealed())
             .then(e => e.events.find((d) => d.type === "flow.AccountCreated"))
-            .then(e => e.data.address);
+            .then(e => engine.getListener().onCreateAccount(e.txId, e.data.address).then(_ => e.data.address));
     }
 }

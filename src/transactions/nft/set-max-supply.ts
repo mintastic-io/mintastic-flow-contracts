@@ -31,6 +31,8 @@ export function setMaxSupply(assetId: string, supply: number): (CadenceEngine) =
             ])
         ])
             .then(fcl.decode)
-            .then(txId => fcl.tx(txId).onceSealed())
+            .then(txId => fcl.tx(txId).onceSealed().then(_ => {
+                return engine.getListener().onSetMaxSupply(txId, assetId, supply);
+            }))
     }
 }

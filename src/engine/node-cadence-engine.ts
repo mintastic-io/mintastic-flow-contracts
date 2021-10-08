@@ -3,7 +3,7 @@ import * as fcl from "@onflow/fcl"
 import {ec as EC} from "elliptic";
 import {SHA3} from "sha3";
 import path from "path";
-import {CadenceEngine} from "./cadence-engine";
+import {CadenceEngine, CadenceListener, NoOpCadenceListener} from "./cadence-engine";
 import {AddressMap} from "../address-map";
 
 export class NodeCadenceEngine implements CadenceEngine{
@@ -13,11 +13,13 @@ export class NodeCadenceEngine implements CadenceEngine{
     private readonly codeCache = {}
     private readonly signer: string;
     private readonly keyId: number;
+    private readonly listener: CadenceListener;
 
-    constructor(signer: string, keyId:number = 0, addressMap: AddressMap) {
+    constructor(signer: string, keyId:number = 0, addressMap: AddressMap, listener: CadenceListener = new NoOpCadenceListener()) {
         this.addressMap = addressMap;
         this.signer = signer;
         this.keyId = keyId;
+        this.listener = listener;
     }
 
     public execute<T>(callback: (CadenceEngine) => Promise<T>): Promise<T> {
@@ -81,5 +83,7 @@ export class NodeCadenceEngine implements CadenceEngine{
         const {account} = await fcl.send([fcl.getAccount(addr)]);
         return account;
     }
+
+    getListener = () => this.listener;
 
 }

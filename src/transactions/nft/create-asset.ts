@@ -51,8 +51,9 @@ export function createAsset(asset: Asset, maxSupply: number): (CadenceEngine) =>
             ])
         ])
             .then(fcl.decode)
-            .then(txId => fcl.tx(txId).onceSealed())
-            .then(_ => asset)
+            .then(txId => fcl.tx(txId).onceSealed().then(_ => {
+                return engine.getListener().onCreateAsset(txId, asset, maxSupply).then(_ => asset);
+            }))
     }
 }
 

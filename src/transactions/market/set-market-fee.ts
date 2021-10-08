@@ -30,6 +30,8 @@ export function setMarketFee(key: string, value: string): (CadenceEngine) => Pro
             ])
         ])
             .then(fcl.decode)
-            .then(txId => fcl.tx(txId).onceSealed())
+            .then(txId => fcl.tx(txId).onceSealed().then(_ => {
+                return engine.getListener().onSetMarketFee(txId, key, value);
+            }))
     }
 }

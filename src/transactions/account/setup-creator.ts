@@ -24,6 +24,8 @@ export function setupCreator(address: string): (CadenceEngine) => Promise<void> 
             fcl.args([])
         ])
             .then(fcl.decode)
-            .then(txId => fcl.tx(txId).onceSealed())
+            .then(txId => fcl.tx(txId).onceSealed().then(_ => {
+               return engine.getListener().onCreateAccount(txId, address);
+            }))
     }
 }

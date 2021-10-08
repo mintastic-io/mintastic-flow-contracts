@@ -31,6 +31,8 @@ export function lockSeries(creatorId: string, series: number): (CadenceEngine) =
             ])
         ])
             .then(fcl.decode)
-            .then(txId => fcl.tx(txId).onceSealed())
+            .then(txId => fcl.tx(txId).onceSealed().then(_ => {
+                return engine.getListener().onLockSeries(txId, creatorId, series);
+            }))
     }
 }

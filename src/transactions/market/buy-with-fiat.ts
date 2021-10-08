@@ -51,6 +51,6 @@ export function buyWithFiat(owner: string, buyer: string, assetId: string, price
             .then(fcl.decode)
             .then(txId => fcl.tx(txId).onceSealed())
             .then(e => e.events.find((d) => d.type.endsWith("MintasticMarket.MarketItemSold")))
-            .then(e => e.data);
+            .then(e => engine.getListener().onBuyWithFiat(e.txId, owner, buyer, assetId, price, amount, unlock, bidId).then(_ => e.data));
     }
 }

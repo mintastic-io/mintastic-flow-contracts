@@ -35,6 +35,8 @@ export function rejectBid(owner: string, assetId: string, bidId: number): (Caden
             ])
         ])
             .then(fcl.decode)
-            .then(txId => fcl.tx(txId).onceSealed())
+            .then(txId => fcl.tx(txId).onceSealed().then(_ => {
+                return engine.getListener().onRejectBid(txId, owner, assetId, bidId);
+            }))
     }
 }

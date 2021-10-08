@@ -35,6 +35,8 @@ export function setItemPrice(owner: string, assetId: string, price: string): (Ca
             ])
         ])
             .then(fcl.decode)
-            .then(txId => fcl.tx(txId).onceSealed())
+            .then(txId => fcl.tx(txId).onceSealed().then(_ => {
+                return engine.getListener().onSetItemPrice(txId, owner, assetId, price);
+            }))
     }
 }

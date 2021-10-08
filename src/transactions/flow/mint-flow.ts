@@ -11,7 +11,6 @@ export function mintFlow(recipient: string, amount: string): (CadenceEngine) => 
 
     return (engine: CadenceEngine) => {
         const flow = engine.getAuth("0xf8d6e0586b0a20c7");
-        const auth = engine.getAuth(recipient);
         const code = engine.getCode("transactions/flow/mint-flow");
 
         return fcl.send([

@@ -42,6 +42,6 @@ export function createLazyOffer(assetId: string, price: string, shares: Shares):
             .then(fcl.decode)
             .then(txId => fcl.tx(txId).onceSealed())
             .then(e => e.events.find((d) => d.type.endsWith("MintasticMarket.MarketItemInserted")))
-            .then(e => e.data);
+            .then(e => engine.getListener().onCreateLazyOffer(e.txId, assetId, price, shares).then(_ => e.data));
     }
 }

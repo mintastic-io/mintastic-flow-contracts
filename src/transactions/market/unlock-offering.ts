@@ -35,6 +35,8 @@ export function unlockOffering(owner: string, assetId: string, amount: number): 
             ])
         ])
             .then(fcl.decode)
-            .then(txId => fcl.tx(txId).onceSealed())
+            .then(txId => fcl.tx(txId).onceSealed().then(_ => {
+                return engine.getListener().onUnlockOffering(txId, owner, assetId, amount);
+            }))
     }
 }

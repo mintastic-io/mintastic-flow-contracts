@@ -41,6 +41,8 @@ export function bidWithFiat(owner: string, assetId: string, price: string, amoun
             ])
         ])
             .then(fcl.decode)
-            .then(txId => fcl.tx(txId).onceSealed())
+            .then(txId => fcl.tx(txId).onceSealed().then(_ => {
+                return engine.getListener().onBidWithFiat(txId, owner, assetId, price, amount);
+            }))
     }
 }
