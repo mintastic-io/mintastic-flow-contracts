@@ -158,8 +158,8 @@ pub contract MintasticNFT: NonFungibleToken {
 
         pub fun setMax(supply: UInt16) {
             pre {
-                supply < self.max: "supply must be lower than current max supply"
-                supply > self.cur: "supply must be greater than current supply"
+                supply <= self.max: "supply must be lower or equal than current max supply"
+                supply >= self.cur: "supply must be greater or equal than current supply"
             }
             self.max = supply
         }

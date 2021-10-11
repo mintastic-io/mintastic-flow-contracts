@@ -65,14 +65,36 @@ describe("mintastic contract test suite", function () {
         const {engine, alice} = await getEnv()
         const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         await engine.execute(setMaxSupply(asset.assetId!, 5));
-        await expect(engine.execute(setMaxSupply(asset.assetId!, 7))).rejects.toContain("supply must be lower than current max supply");
+        await expect(engine.execute(setMaxSupply(asset.assetId!, 7))).rejects.toContain("supply must be lower or equal than current max supply");
     });
 
     test("cannot set max supply lower than cur supply", async () => {
         const {engine, alice, bob} = await getEnv()
         const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
         await engine.execute(mint(bob, asset.assetId!, 5));
-        await expect(engine.execute(setMaxSupply(asset.assetId!, 3))).rejects.toContain("supply must be greater than current supply");
+        await expect(engine.execute(setMaxSupply(asset.assetId!, 3))).rejects.toContain("supply must be greater or equal than current supply");
+    });
+
+    test("lower max supply", async () => {
+        const {engine, alice, bob} = await getEnv()
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
+        await engine.execute(mint(bob, asset.assetId!, 5));
+        await engine.execute(setMaxSupply(asset.assetId!, 7));
+
+        const {maxSupply, curSupply} = await engine.execute(readSupply(asset.assetId));
+        expect(maxSupply).toBe(7);
+        expect(curSupply).toBe(5);
+    });
+
+    test("set max supply to cur supply", async () => {
+        const {engine, alice, bob} = await getEnv()
+        const asset = await engine.execute(createAsset(newAsset(getUuid(alice), uuid()), 10));
+        await engine.execute(mint(bob, asset.assetId!, 5));
+        await engine.execute(setMaxSupply(asset.assetId!, 5));
+
+        const {maxSupply, curSupply} = await engine.execute(readSupply(asset.assetId));
+        expect(maxSupply).toBe(5);
+        expect(curSupply).toBe(5);
     });
 
     test("cannot mint unknown asset", async () => {
