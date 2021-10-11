@@ -1,5 +1,5 @@
 import path from "path";
-import {init} from "flow-js-testing/dist/utils/init";
+import {init} from "flow-js-testing";
 import {
     createAsset,
     hasCollectorCollection,

@@ -1,5 +1,5 @@
 import path from "path";
-import {init} from "flow-js-testing/dist/utils/init";
+import {init} from "flow-js-testing";
 import {createAccount, createAsset, createLazyOffer, mint, setupCollector, setupCreator} from "../src";
 import {getEnv, setupEnv} from "./utils/setup-env";
 import {hasCreatorCollection} from "../src/scripts/account/has-creator-collection";
